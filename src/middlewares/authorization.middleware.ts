@@ -16,7 +16,7 @@ export const generalAuthFunction = async (
 
     if (!authorizationHeader) {
       return response.status(401).json({
-        message: 'No Authorization header provided, please login again',
+        message: 'Please login again',
       });
     }
 
@@ -39,7 +39,7 @@ export const generalAuthFunction = async (
         if (!refreshToken) {
           return response.status(401).json({
             status: 'error',
-            message: 'Access Token Expired. Please log in again.',
+            message: 'Refresh Token not found. Please login again.',
           });
 
         }
@@ -50,29 +50,22 @@ export const generalAuthFunction = async (
         } catch (refreshError: any) {
           return response.status(401).json({
             status: 'error',
-            message: 'Refresh Token Expired. Please log in again.',
+            message: 'Refresh Token Expired. Please login again.',
           });
         }
 
-        const filter = { _id: refreshVerifiedUser.id };
+        const filter = { id: refreshVerifiedUser.id };
 
-        const projection = { refreshToken: 1, isBlacklisted: 1 };
+        const projection = { refreshToken: 1, isVerified: 1 };
 
         const userDetails:any = await userDatabase.userDatabaseHelper.getOne(filter, projection)
-
-        if(userDetails.isBlacklisted){
-            return response.status(403).json({
-              status: 'error',
-              message: `Account Blocked, contact admin on info@naijamade.com`
-            })
-        }
 
         const compareRefreshTokens = refreshToken === userDetails.refreshToken
 
         if(compareRefreshTokens === false){
           return response.status(401).json({
             status: 'error',
-            message: 'Please log in again.',
+            message: 'Please login again.',
           });
         }
 
@@ -91,7 +84,7 @@ export const generalAuthFunction = async (
         response.setHeader('x-refresh-token', newRefreshToken)
 
         await userDatabase.userDatabaseHelper.updateOne(
-          { _id: refreshVerifiedUser.id },
+          { id: refreshVerifiedUser.id },
           { refreshToken }
         )
 
@@ -106,18 +99,11 @@ export const generalAuthFunction = async (
       });
     }
 
-    const filter = { _id: verifiedUser.id };
+    const filter = { id: verifiedUser.id };
 
-    const projection = { isBlacklisted: 1 };
+    const projection = { isVerified: 1 };
 
     const userDetails:any = await userDatabase.userDatabaseHelper.getOne(filter, projection)
-
-    if(userDetails.isBlacklisted){
-        return response.status(403).json({
-          status: 'error',
-          message: `Account Blocked, contact admin on info@naijamade.com`
-        })
-    }
 
       request.user = verifiedUser;
 

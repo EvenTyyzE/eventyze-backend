@@ -141,9 +141,23 @@ User.init(
       type: DataTypes.INTEGER,
       defaultValue: 0,
     },
+
+    noOfFollowings: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+    },
+
     otp: {
-      type: DataTypes.STRING,
-      allowNull: true
+      type: DataTypes.JSON,
+      allowNull: true,
+      defaultValue: null,
+      validate: {
+        isObject(value:Record<string, any>) {
+          if (value && (typeof value !== "object" || Array.isArray(value))) {
+            throw new Error("Otp must be an object with `otp`, otpId and `expiresAt`");
+          }
+        },
+      },
     },
   },
   {

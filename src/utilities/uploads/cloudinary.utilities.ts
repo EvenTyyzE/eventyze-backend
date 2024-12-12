@@ -3,21 +3,21 @@ import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import { v2 as cloudinary } from 'cloudinary';
 import dotenv from 'dotenv';
 import {Request, Response} from 'express';
-import { CLOUDINARY_NAME, API_KEY, API_SECRET } from '../../configurations/envKeys';
+import { CLOUDINARY_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET } from '../../configurations/envKeys';
 
 dotenv.config()
 
 cloudinary.config({
     cloud_name: CLOUDINARY_NAME,
-    api_key: API_KEY,
-    api_secret: API_SECRET
+    api_key: CLOUDINARY_API_KEY,
+    api_secret: CLOUDINARY_API_SECRET
 })
 
 const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: async(req, file)=>{
         return {
-            folder: "Very-Deep-Tech"
+            folder: "Eventyze"
         }
     }
 })

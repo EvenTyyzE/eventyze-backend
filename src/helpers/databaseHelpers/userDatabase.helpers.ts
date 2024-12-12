@@ -1,11 +1,14 @@
 import { Transaction } from "sequelize";
 import User from "../../models/users/usersModel";
+import Wallet from "../../models/wallets/walletModel";
+import Followings from "../../models/followings/followingsModel";
+import Followers from "../../models/followers/followersModel";
 
 const userDatabaseHelper = {
 
-  create: async (data: any) => {
+  create: async (data: any, transaction?:Transaction) => {
     try {
-      const newUser = await User.create(data);
+      const newUser = await User.create(data, { transaction });
       return newUser;
     } catch (error: any) {
       throw new Error(`Error creating User: ${error.message}`);
@@ -53,11 +56,17 @@ const userDatabaseHelper = {
     }
   },
 
-  getOne: async (filter: Record<string, any>, projection?: any) => {
+  getOne: async (filter: Record<string, any>, projection?: any,) => {
     try {
       const user = await User.findOne({
         where: filter,
         attributes: projection,
+        include: [
+          { model: Wallet, attributes: ['totalBalance'] },
+          { model: Followings, attributes: ['followings'] },
+          { model: Followers, attributes: ['followers'] },
+        ],
+  
       });
       return user;
     } catch (error: any) {
@@ -88,7 +97,6 @@ const userDatabaseHelper = {
         phone: userData.phone,
         isVerified: userData.isVerified,
         refreshToken: userData.refreshToken,
-        noOfMovies: userData.numberOfMoviesAdded,
         numberOfEventsHosted: userData.numberOfEventsHosted,
         numberOfEventsAttended: userData.numberOfEventsAttended,
         bio: userData.bio,
@@ -99,6 +107,7 @@ const userDatabaseHelper = {
         accountStatus: userData.accountStatus,
         interests: userData.interests,
         noOfFollowers: userData.noOfFollowers,
+        noOfFollowings: userData.noOfFollowings,
         id:userData.id
       };
     } catch (error: any) {

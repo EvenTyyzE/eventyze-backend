@@ -1,9 +1,9 @@
 import brcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { APP_SECRET } from '../../configurations/envKeys';
-import { ResponseDetails } from '../../types/utilities.types';
-import { errorUtilities } from '../../utilities';
-import { QueryParameters } from '../../types/helpers.types';
+// import { ResponseDetails } from '../../types/utilities.types';
+// import { errorUtilities } from '../../utilities';
+// import { QueryParameters } from '../../types/helpers.types';
 import { FilterQuery } from 'mongoose';
 
 /**
@@ -59,158 +59,159 @@ const generateTokens = async (
  * @throws {Error} - Throws an error if there is an issue with verifying the token.
  */
 
-const verifyRegistrationToken = async (token: string): Promise<any> => {
-  try {
-    return jwt.verify(token, `${APP_SECRET}`);
-  } catch (error: any) {
-    if (error.message === 'jwt expired') {
-      throw errorUtilities.createError('Please request a new verification email', 401);
-    }
-    throw errorUtilities.createUnknownError(error);
-  }
-};
+// const verifyRegistrationToken = async (token: string): Promise<any> => {
+//   try {
+//     return jwt.verify(token, `${APP_SECRET}`);
+//   } catch (error: any) {
+//     if (error.message === 'jwt expired') {
+//       throw errorUtilities.createError('Please request a new verification email', 401);
+//     }
+//     throw errorUtilities.createUnknownError(error);
+//   }
+// };
 
 
-const dateFormatter = (dateString: Date) => {
-  const year = dateString.getFullYear();
-  const month = dateString.getMonth() + 1;
-  const day = dateString.getDate();
-  const hours = dateString.getHours();
-  const minutes = dateString.getMinutes();
-  const seconds = dateString.getSeconds();
-  const date = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-  const time = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+// const dateFormatter = (dateString: Date) => {
+//   const year = dateString.getFullYear();
+//   const month = dateString.getMonth() + 1;
+//   const day = dateString.getDate();
+//   const hours = dateString.getHours();
+//   const minutes = dateString.getMinutes();
+//   const seconds = dateString.getSeconds();
+//   const date = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+//   const time = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 
-  return {
-    date,
-    time
-  };
-};
+//   return {
+//     date,
+//     time
+//   };
+// };
 
 
-const refreshUserToken = async (
-    userRefreshToken: string
-  ) => {
-    try{
-        let responseDetails: ResponseDetails = {
-            statusCode: 0,
-            message: '',
-        };
-    const decodedToken:any = jwt.verify(userRefreshToken, `${APP_SECRET}`);
+// const refreshUserToken = async (
+//     userRefreshToken: string
+//   ) => {
+//     try{
+//         let responseDetails: ResponseDetails = {
+//             statusCode: 0,
+//             message: '',
+//         };
+//     const decodedToken:any = jwt.verify(userRefreshToken, `${APP_SECRET}`);
 
-    if (!decodedToken) {
-        responseDetails.statusCode = 401;
-        responseDetails.message = 'Invalid Refresh Token';
-        return responseDetails;
-      }
+//     if (!decodedToken) {
+//         responseDetails.statusCode = 401;
+//         responseDetails.message = 'Invalid Refresh Token';
+//         return responseDetails;
+//       }
 
-      const userPayload = {
-        id: decodedToken.id,
-        email: decodedToken.email,
-      }
+//       const userPayload = {
+//         id: decodedToken.id,
+//         email: decodedToken.email,
+//       }
 
-      const newAccessToken = await generateTokens(userPayload, '3h')
-      const newRefreshToken = await generateTokens(userPayload, '30d')
+//       const newAccessToken = await generateTokens(userPayload, '3h')
+//       const newRefreshToken = await generateTokens(userPayload, '30d')
 
-      responseDetails.statusCode = 200;
-      responseDetails.message = 'Refresh Token is valid, new tokens generated';
-      responseDetails.data = {
-        accessToken: newAccessToken,
-        refreshToken: newRefreshToken,
-    }
-    return responseDetails;
+//       responseDetails.statusCode = 200;
+//       responseDetails.message = 'Refresh Token is valid, new tokens generated';
+//       responseDetails.data = {
+//         accessToken: newAccessToken,
+//         refreshToken: newRefreshToken,
+//     }
+//     return responseDetails;
 
-    }catch (error: any) {
-        if (error.message === 'jwt expired') {
-          let responseDetails: ResponseDetails = {
-            statusCode: 0,
-            message: '',
-          };
-          responseDetails.statusCode = 403;
-          responseDetails.message = 'Please login again';
-          return responseDetails;
-        }
-      }
-  };
+//     }catch (error: any) {
+//         if (error.message === 'jwt expired') {
+//           let responseDetails: ResponseDetails = {
+//             statusCode: 0,
+//             message: '',
+//           };
+//           responseDetails.statusCode = 403;
+//           responseDetails.message = 'Please login again';
+//           return responseDetails;
+//         }
+//       }
+//   };
 
-  const generateOtp = async (userId:string) => {
-    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // Expires in 5 minutes
-    await Otp.create({ userId, otp, expiresAt });
-    return otp;
+  const generateOtp = async () => {
+    const otp = Math.floor(100000 + Math.random() * 90000).toString();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    const otpReturn = ({ otp, expiresAt });
+    return otpReturn;
   };
   
-  const verifyOtp = async (userId:string, otp:string) => {
-    const record = await Otp.findOne({ userId, otp, used: false });
-    if (!record || record.expiresAt < new Date()) return false;
-    record.used = true;
-    await record.save();
-    return true;
-  };
+  // const verifyOtp = async (userId:string, otp:string) => {
+  //   const record = await Otp.findOne({ userId, otp, used: false });
+  //   if (!record || record.expiresAt < new Date()) return false;
+  //   record.used = true;
+  //   await record.save();
+  //   return true;
+  // };
 
 
   //This function is used to manage queries (request.query) for the application  
-  export const queryFilter = async (queryItem: QueryParameters) => {
+  // export const queryFilter = async (queryItem: QueryParameters) => {
 
-    const query: FilterQuery<any> = {};
+  //   const query: FilterQuery<any> = {};
   
-    if (queryItem?.shopName) {
-      query["shopName"] = queryItem.shopName.toLowerCase();
-    }
+  //   if (queryItem?.shopName) {
+  //     query["shopName"] = queryItem.shopName.toLowerCase();
+  //   }
     
-    if (queryItem?.shopCategory) {
-      query["shopCategory"] = queryItem.shopCategory;
-    }
+  //   if (queryItem?.shopCategory) {
+  //     query["shopCategory"] = queryItem.shopCategory;
+  //   }
     
-    if (queryItem?.productName) {
-      query["productName"] = queryItem.productName;
-    }
+  //   if (queryItem?.productName) {
+  //     query["productName"] = queryItem.productName;
+  //   }
     
-    if (queryItem?.productCategory) {
-      query["productCategory"] = queryItem.productCategory;
-    }
+  //   if (queryItem?.productCategory) {
+  //     query["productCategory"] = queryItem.productCategory;
+  //   }
     
-    if (queryItem?.min_cost && queryItem?.max_cost) {
-      query.cost = {
-        $gte: queryItem.min_cost,
-        $lte: queryItem.max_cost
-      };
-    } else if (queryItem?.min_cost) {
-      query.cost = {
-        $gte: queryItem.min_cost
-      };
-    } else if (queryItem?.max_cost) {
-      query.cost = {
-        $lte: queryItem.max_cost
-      };
-    } else if (queryItem?.exact_cost) {
-      query.cost = queryItem.exact_cost;
-    }
+  //   if (queryItem?.min_cost && queryItem?.max_cost) {
+  //     query.cost = {
+  //       $gte: queryItem.min_cost,
+  //       $lte: queryItem.max_cost
+  //     };
+  //   } else if (queryItem?.min_cost) {
+  //     query.cost = {
+  //       $gte: queryItem.min_cost
+  //     };
+  //   } else if (queryItem?.max_cost) {
+  //     query.cost = {
+  //       $lte: queryItem.max_cost
+  //     };
+  //   } else if (queryItem?.exact_cost) {
+  //     query.cost = queryItem.exact_cost;
+  //   }
 
-    if (queryItem?.start_date && queryItem?.end_date) {
-      query.createdAt = {
-        $gte: new Date(queryItem.start_date),
-        $lte: new Date(queryItem.end_date)
-      };
-    } else if (queryItem?.start_date) {
-      query.createdAt = {
-        $gte: new Date(queryItem.start_date)
-      };
-    } else if (queryItem?.end_date) {
-      query.createdAt = {
-        $lte: new Date(queryItem.end_date)
-      };
-    }
+  //   if (queryItem?.start_date && queryItem?.end_date) {
+  //     query.createdAt = {
+  //       $gte: new Date(queryItem.start_date),
+  //       $lte: new Date(queryItem.end_date)
+  //     };
+  //   } else if (queryItem?.start_date) {
+  //     query.createdAt = {
+  //       $gte: new Date(queryItem.start_date)
+  //     };
+  //   } else if (queryItem?.end_date) {
+  //     query.createdAt = {
+  //       $lte: new Date(queryItem.end_date)
+  //     };
+  //   }
   
-    return query;
-  };
+  //   return query;
+  // };
   
 
 export default {
   hashPassword,
   validatePassword,
+  generateOtp,
   generateTokens,
-  refreshUserToken,
-  dateFormatter,
-  verifyRegistrationToken
+  // refreshUserToken,
+  // dateFormatter,
+  // verifyRegistrationToken
 };

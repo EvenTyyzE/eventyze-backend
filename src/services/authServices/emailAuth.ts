@@ -5,11 +5,17 @@ import { mailUtilities, errorUtilities } from "../../utilities";
 import { USERS_APP_BASE_URL } from '../../configurations/envKeys';
 import { Roles } from "types/modelTypes";
 import { v4 } from "uuid";
-import Otp from "models/otp/otpModel";
+import otpDatabaseHelpers from "../../helpers/databaseHelpers/otpDatabase.helpers";
+import walletDatabaseHelperHelpers from "../../helpers/databaseHelpers/walletDatabaseHelper.helpers";
+import followersDatabaseHelpersHelpers from "../../helpers/databaseHelpers/followersDatabaseHelpers.helpers";
+import followingsDatabaseHelpersHelpers from "../../helpers/databaseHelpers/followingsDatabaseHelpers.helpers";
+import { Transaction } from "sequelize";
+import performTransaction from "../../middlewares/databaseTransactions.middleware";
+
 
 const userRegistrationService = errorUtilities.withErrorHandling(async (
   userPayload: Record<string, any>
-): Promise<any> => {
+): Promise<Record<string, any>> => {
     const responseHandler: ResponseDetails = {
       statusCode: 0,
       message: "",
@@ -34,222 +40,281 @@ const userRegistrationService = errorUtilities.withErrorHandling(async (
 
     const userId = v4()
 
-    const payload = {
-      id: userId,
-      email,
-      password: await generalHelpers.hashPassword(password),
-      role: Roles.User,
-    };
+    const { otp, expiresAt } = await generalHelpers.generateOtp()
+
+    const otpId = v4()
 
     const otpPayload = {
-        id: v4(),
+        id: otpId,
         userId,
-        otp: "",
-        expiresAt: "",
+        otp,
+        expiresAt,
         used: false
     }
 
-    const newOtp = await Otp
+    await otpDatabaseHelpers.otpDatabaseHelper.create(otpPayload)
 
-    const newUser = await userDatabase.userDatabaseHelper.create(payload);
-
-
-});
-
-const adminRegistrationService = errorUtilities.withErrorHandling(async (userPayload: Record<string, any>) => {
-
-    const responseHandler: ResponseDetails = {
-      statusCode: 0,
-      message: "",
-    };
-
-    const { name, email, password, phone } = userPayload;
-
-    if (!validator.isMobilePhone(phone, "en-NG")) {
-      throw errorUtilities.createError("Invalid phone number", 400);
+    const walletPayload = {
+      id: v4(),
+      userId,
+      totalBalance: 0
     }
 
-    if (!validator.isEmail(email)) {
-      throw errorUtilities.createError("Invalid email", 400);
+    const followersPayload = {
+      id: v4(),
+      userId,
+      followers: []
     }
 
-    const existingAdmin = await userDatabase.userDatabaseHelper.getOne({
-      email,
-    });
-    if (existingAdmin) {
-      throw errorUtilities.createError("Admin already exists with this email", 400);
+    const followingsPayload = {
+      id: v4(),
+      userId,
+      followings: []
     }
 
-    const payload = {
-      name,
+    const userCreationPayload = {
+      id: userId,
       email,
       password: await generalHelpers.hashPassword(password),
-      phone,
-      role: "Admin",
-      isVerified: true,
+      otp: {
+        otp,
+        otpId,
+        expiresAt
+      },
+      role: Roles.User,
     };
 
-    const newUser = await userDatabase.userDatabaseHelper.create(payload);
+    const operations = [
+      async (transaction: Transaction) => {
+        await userDatabase.userDatabaseHelper.create(userCreationPayload, transaction);
+      },
 
-    const userWithoutPassword = await userDatabase.userDatabaseHelper.extractUserDetails(newUser)
+      async (transaction: Transaction) => {
+        await walletDatabaseHelperHelpers.walletDatabaseHelpers.create(walletPayload, transaction);
+      },
 
-    delete userWithoutPassword.refreshToken
+      async (transaction: Transaction) => {
+        await followersDatabaseHelpersHelpers.followersDatabaseHelpers.create(followersPayload, transaction);
+      },
+
+      async (transaction: Transaction) => {
+        await followingsDatabaseHelpersHelpers.followingsDatabaseHelpers.create(followingsPayload, transaction);
+      },
+    ];
+
+    
+    await performTransaction.performTransaction(operations);
+
+
+    const user:any = await userDatabase.userDatabaseHelper.getOne({userId})
+    
+    await mailUtilities.sendMail(
+      email,
+      `Welcome to Eventyze, your OTP is ${otp}, it expires in 5 minutes`,
+      'Eventyze OTP'
+    )
 
     responseHandler.statusCode = 201;
-    responseHandler.message = "Admin registered successfully";
-    responseHandler.data = userWithoutPassword;
+    responseHandler.message = "User created successfully";
+    responseHandler.data = user
     return responseHandler;
 
 });
 
-const userLogin = errorUtilities.withErrorHandling(async (loginPayload: Record<string, any>) => {
+// const adminRegistrationService = errorUtilities.withErrorHandling(async (userPayload: Record<string, any>) => {
 
-    const responseHandler: ResponseDetails = {
-      statusCode: 0,
-      message: "",
-    };
+//     const responseHandler: ResponseDetails = {
+//       statusCode: 0,
+//       message: "",
+//     };
 
-    const { email, password } = loginPayload;
+//     const { name, email, password, phone } = userPayload;
 
-    const existingUser = await userDatabase.userDatabaseHelper.getOne({
-      email,
-    });
+//     if (!validator.isMobilePhone(phone, "en-NG")) {
+//       throw errorUtilities.createError("Invalid phone number", 400);
+//     }
 
-    if (!existingUser) {
-        throw errorUtilities.createError(`User with email ${email} does not exist`, 404);
-    }
+//     if (!validator.isEmail(email)) {
+//       throw errorUtilities.createError("Invalid email", 400);
+//     }
 
-    if(!existingUser.isVerified){
-        throw errorUtilities.createError(`User with email ${email} is not verified. Click on the link in the verification mail sent to ${email} or request for another verification mail`, 400);
-    }
+//     const existingAdmin = await userDatabase.userDatabaseHelper.getOne({
+//       email,
+//     });
+//     if (existingAdmin) {
+//       throw errorUtilities.createError("Admin already exists with this email", 400);
+//     }
 
-    if(existingUser.isBlacklisted){
-        throw errorUtilities.createError(`Account Blocked, contact admin on info@naijamade.com`, 400)
-    }
+//     const payload = {
+//       name,
+//       email,
+//       password: await generalHelpers.hashPassword(password),
+//       phone,
+//       role: "Admin",
+//       isVerified: true,
+//     };
 
-    const verifyPassword = await generalHelpers.validatePassword(
-      password,
-      existingUser.password
-    );
+//     const newUser = await userDatabase.userDatabaseHelper.create(payload);
 
-    if (!verifyPassword) {
-        throw errorUtilities.createError("Incorrect Password", 400);
-    }
+//     const userWithoutPassword = await userDatabase.userDatabaseHelper.extractUserDetails(newUser)
 
-    const tokenPayload = {
-      id: existingUser._id,
-      email: existingUser.email,
-      role: existingUser.role
-    };
+//     delete userWithoutPassword.refreshToken
 
-    const accessToken = await generalHelpers.generateTokens(tokenPayload, "2h");
-    const refreshToken = await generalHelpers.generateTokens(tokenPayload,"30d");
+//     responseHandler.statusCode = 201;
+//     responseHandler.message = "Admin registered successfully";
+//     responseHandler.data = userWithoutPassword;
+//     return responseHandler;
 
-    existingUser.refreshToken = refreshToken;
+// });
 
-    await existingUser.save();
+// const userLogin = errorUtilities.withErrorHandling(async (loginPayload: Record<string, any>) => {
 
-    const userWithoutPassword = await userDatabase.userDatabaseHelper.extractUserDetails(existingUser);
+//     const responseHandler: ResponseDetails = {
+//       statusCode: 0,
+//       message: "",
+//     };
 
-    delete userWithoutPassword.refreshToken
+//     const { email, password } = loginPayload;
 
-    const dateDetails = generalHelpers.dateFormatter(new Date())
-    const mailMessage = `Hi ${existingUser.name}, <br /> There was a login to your account on ${dateDetails.date} by ${dateDetails.time}. If you did not initiate this login, click the button below to restrict your account. If it was you, please ignore. The link will expire in one hour.`;
-    const mailLink = `${USERS_APP_BASE_URL}/restrict-account/${existingUser._id}`
-    const mailButtonText = 'Restrict Account'
-    const mailSubject = "Activity Detected on Your Account";
+//     const existingUser = await userDatabase.userDatabaseHelper.getOne({
+//       email,
+//     });
 
-    await mailUtilities.sendMail(existingUser.email, mailMessage, mailSubject, mailLink, mailButtonText)
+//     if (!existingUser) {
+//         throw errorUtilities.createError(`User with email ${email} does not exist`, 404);
+//     }
 
-    responseHandler.statusCode = 200;
+//     if(!existingUser.isVerified){
+//         throw errorUtilities.createError(`User with email ${email} is not verified. Click on the link in the verification mail sent to ${email} or request for another verification mail`, 400);
+//     }
 
-    responseHandler.message = `Welcome back ${userWithoutPassword.name}`;
+//     if(existingUser.isBlacklisted){
+//         throw errorUtilities.createError(`Account Blocked, contact admin on info@naijamade.com`, 400)
+//     }
 
-    responseHandler.data = {
-      user: userWithoutPassword,
-      accessToken: accessToken,
-      refreshToken: refreshToken,
-    };
+//     const verifyPassword = await generalHelpers.validatePassword(
+//       password,
+//       existingUser.password
+//     );
 
-    return responseHandler;
+//     if (!verifyPassword) {
+//         throw errorUtilities.createError("Incorrect Password", 400);
+//     }
 
-});
+//     const tokenPayload = {
+//       id: existingUser._id,
+//       email: existingUser.email,
+//       role: existingUser.role
+//     };
+
+//     const accessToken = await generalHelpers.generateTokens(tokenPayload, "2h");
+//     const refreshToken = await generalHelpers.generateTokens(tokenPayload,"30d");
+
+//     existingUser.refreshToken = refreshToken;
+
+//     await existingUser.save();
+
+//     const userWithoutPassword = await userDatabase.userDatabaseHelper.extractUserDetails(existingUser);
+
+//     delete userWithoutPassword.refreshToken
+
+//     const dateDetails = generalHelpers.dateFormatter(new Date())
+//     const mailMessage = `Hi ${existingUser.name}, <br /> There was a login to your account on ${dateDetails.date} by ${dateDetails.time}. If you did not initiate this login, click the button below to restrict your account. If it was you, please ignore. The link will expire in one hour.`;
+//     const mailLink = `${USERS_APP_BASE_URL}/restrict-account/${existingUser._id}`
+//     const mailButtonText = 'Restrict Account'
+//     const mailSubject = "Activity Detected on Your Account";
+
+//     await mailUtilities.sendMail(existingUser.email, mailMessage, mailSubject, mailLink, mailButtonText)
+
+//     responseHandler.statusCode = 200;
+
+//     responseHandler.message = `Welcome back ${userWithoutPassword.name}`;
+
+//     responseHandler.data = {
+//       user: userWithoutPassword,
+//       accessToken: accessToken,
+//       refreshToken: refreshToken,
+//     };
+
+//     return responseHandler;
+
+// });
 
 
-const verifyUserAccount = errorUtilities.withErrorHandling(async (verificationToken: string): Promise<any> => {
+// const verifyUserAccount = errorUtilities.withErrorHandling(async (verificationToken: string): Promise<any> => {
 
-  const responseHandler: ResponseDetails = {
-    statusCode: 0,
-    message: "",
-  };
+//   const responseHandler: ResponseDetails = {
+//     statusCode: 0,
+//     message: "",
+//   };
 
-  const verify: any = await generalHelpers.verifyRegistrationToken(verificationToken);
+//   const verify: any = await generalHelpers.verifyRegistrationToken(verificationToken);
 
-  const user = await userDatabase.userDatabaseHelper.getOne({_id:verify.id});
+//   const user = await userDatabase.userDatabaseHelper.getOne({_id:verify.id});
 
-  if (!user) {
-    throw errorUtilities.createError("User not found", 404);
-  }
+//   if (!user) {
+//     throw errorUtilities.createError("User not found", 404);
+//   }
 
-  if (user.isVerified) {
-    throw errorUtilities.createError("User is already verified", 400);
-  }
+//   if (user.isVerified) {
+//     throw errorUtilities.createError("User is already verified", 400);
+//   }
 
-  await userDatabase.userDatabaseHelper.updateOne(
-    { _id:user._id }, { $set: { isVerified: true } }
-  )
+//   await userDatabase.userDatabaseHelper.updateOne(
+//     { _id:user._id }, { $set: { isVerified: true } }
+//   )
 
-  responseHandler.statusCode = 200;
-  responseHandler.message = "User verified successfully";
+//   responseHandler.statusCode = 200;
+//   responseHandler.message = "User verified successfully";
 
-  return responseHandler;
+//   return responseHandler;
 
-});
+// });
 
-const resendVerificationLinkService = errorUtilities.withErrorHandling(async (email: string): Promise<any> => {
+// const resendVerificationLinkService = errorUtilities.withErrorHandling(async (email: string): Promise<any> => {
 
-  const responseHandler: ResponseDetails = {
-    statusCode: 0,
-    message: "",
-  };
+//   const responseHandler: ResponseDetails = {
+//     statusCode: 0,
+//     message: "",
+//   };
 
-  const user = await userDatabase.userDatabaseHelper.getOne({email});
+//   const user = await userDatabase.userDatabaseHelper.getOne({email});
 
-  if (!user) {
-    throw errorUtilities.createError(`${email} does not exist`, 404);
-  }
+//   if (!user) {
+//     throw errorUtilities.createError(`${email} does not exist`, 404);
+//   }
 
-  if (user.isVerified) {
-    throw errorUtilities.createError("User is already verified", 400);
-  }
+//   if (user.isVerified) {
+//     throw errorUtilities.createError("User is already verified", 400);
+//   }
 
-  const tokenPayload = {
-    id: user._id,
-    role: user.role,
-    email: user.email,
-  };
+//   const tokenPayload = {
+//     id: user._id,
+//     role: user.role,
+//     email: user.email,
+//   };
 
-  const verificationToken = await generalHelpers.generateTokens(
-    tokenPayload,
-    "1h"
-  );
-  await mailUtilities.sendMail(user.email, "Click the button below to verify your account", "PLEASE VERIFY YOUR ACCOUNT", `${USERS_APP_BASE_URL}/verification/${verificationToken}`);
+//   const verificationToken = await generalHelpers.generateTokens(
+//     tokenPayload,
+//     "1h"
+//   );
+//   await mailUtilities.sendMail(user.email, "Click the button below to verify your account", "PLEASE VERIFY YOUR ACCOUNT", `${USERS_APP_BASE_URL}/verification/${verificationToken}`);
 
-  const userWithoutPassword = await userDatabase.userDatabaseHelper.extractUserDetails(user)
+//   const userWithoutPassword = await userDatabase.userDatabaseHelper.extractUserDetails(user)
 
-  delete userWithoutPassword.refreshToken
+//   delete userWithoutPassword.refreshToken
 
-  responseHandler.statusCode = 200;
-  responseHandler.message = "A verification mail has been sent to your account, please click on the link in the mail to verify your account. The link is valid for one hour only. Thank you.";
-  responseHandler.data = userWithoutPassword;
-  return responseHandler;
+//   responseHandler.statusCode = 200;
+//   responseHandler.message = "A verification mail has been sent to your account, please click on the link in the mail to verify your account. The link is valid for one hour only. Thank you.";
+//   responseHandler.data = userWithoutPassword;
+//   return responseHandler;
 
-})
+// })
 
 export default {
   userRegistrationService,
-  adminRegistrationService,
-  userLogin,
-  verifyUserAccount,
-  resendVerificationLinkService
+  // adminRegistrationService,
+  // userLogin,
+  // verifyUserAccount,
+  // resendVerificationLinkService
 };

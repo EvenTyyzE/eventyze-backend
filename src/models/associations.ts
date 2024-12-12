@@ -25,6 +25,7 @@ Wallet.belongsTo(User, {
   as: 'user'
 })
 
+
 User.hasOne(Followers, {
   foreignKey: 'userId',
   as: 'followers'
@@ -34,6 +35,7 @@ Followers.belongsTo(User, {
   foreignKey: 'userId',
   as: 'user'
 })
+
 
 User.hasOne(Followings, {
   foreignKey: "userId",

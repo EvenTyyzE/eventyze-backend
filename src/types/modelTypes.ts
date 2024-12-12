@@ -19,7 +19,8 @@ export interface UserAttributes {
     isVerified: boolean;
     isBlacklisted: boolean;
     noOfFollowers: number;
-    otp: string;
+    noOfFollowings: number;
+    otp: Record<string, any>;
 }
 
 export enum Roles {

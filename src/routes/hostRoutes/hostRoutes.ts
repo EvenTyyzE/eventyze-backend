@@ -3,7 +3,7 @@ import { joiValidators } from '../../validations';
 import { generalAuthFunction, rolePermit } from '../../middlewares/authorization.middleware';
 // import { vendorShopController, vendorProductController } from '../../controllers/index';
 import { cloudinaryUpload } from '../../utilities';
-import { Roles } from '../../models/users/usersModel';
+import { Roles } from '../../types/modelTypes';
 
 const router = express.Router();
 

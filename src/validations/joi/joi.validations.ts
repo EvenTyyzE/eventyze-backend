@@ -28,12 +28,10 @@ const inputValidator = (schema: Joi.Schema):any => {
 
 //User Auth
 const userRegisterSchemaViaEmail = Joi.object({
-  name: Joi.string().required(),
   email: Joi.string().email().required(),
   password: Joi.string().min(8).pattern(PASSWORD_PATTERN).required().messages({
     'string.pattern.base': 'Password must contain at least 8 characters, one uppercase letter, one lowercase letter, and one number.'
   }),
-  phone: Joi.string().required()
 });
 
 
