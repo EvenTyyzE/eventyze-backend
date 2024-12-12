@@ -133,6 +133,21 @@ const refreshUserToken = async (
       }
   };
 
+  const generateOtp = async (userId:string) => {
+    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // Expires in 5 minutes
+    await Otp.create({ userId, otp, expiresAt });
+    return otp;
+  };
+  
+  const verifyOtp = async (userId:string, otp:string) => {
+    const record = await Otp.findOne({ userId, otp, used: false });
+    if (!record || record.expiresAt < new Date()) return false;
+    record.used = true;
+    await record.save();
+    return true;
+  };
+
 
   //This function is used to manage queries (request.query) for the application  
   export const queryFilter = async (queryItem: QueryParameters) => {

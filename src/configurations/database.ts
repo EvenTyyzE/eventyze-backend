@@ -1,29 +1,27 @@
-import mongoose from 'mongoose';
-import { DATABASE_URI } from './envKeys';
+import {Sequelize} from 'sequelize';
+import config from './config';
 
-let connection: typeof mongoose | null = null;
 
-export const connectDB = async () => {
-  if (connection) {
-    return connection;
-  }
+const {
+    DB_PORT,
+    DB_NAME,
+    DB_USERNAME,
+    DB_HOST,
+    DB_PASSWORD
+} = config
 
-  const timeout = new Promise<never>((_, reject) =>
-    setTimeout(() => {
-      reject(new Error('Database connection timeout. Please try again later.'));
-    }, 10000)
-  );
+export const database = new Sequelize(
+    DB_NAME!,
+    DB_USERNAME!,
+    DB_PASSWORD as string,
+{
+    host: DB_HOST,
+    port: DB_PORT as unknown as number,
+    dialect: "postgres",
+    logging: false,
+    dialectOptions: {
+        encrypt: true
+    },
+}
 
-  const connect = mongoose.connect(`${DATABASE_URI}`)
-    .then((conn) => {
-      console.log('Database connected');
-      connection = conn;
-      return connection;
-    })
-    .catch((error) => {
-      console.error('Error connecting to database:', error);
-      throw error;
-    });
-
-  return Promise.race([connect, timeout]);
-};
+)
