@@ -2,7 +2,7 @@ import { DataTypes, Model } from "sequelize";
 import { database } from "../../configurations/database";
 import {
   OtpAttributes,
-} from "types/modelTypes";
+} from "../../types/modelTypes";
 import User from "../users/usersModel";
 
 export class Otp extends Model<OtpAttributes> {}
@@ -16,7 +16,7 @@ Otp.init(
     },
 
     userId: {
-      type: DataTypes.STRING,
+      type: DataTypes.UUID,
       allowNull: false,
       references: {
         model: User,

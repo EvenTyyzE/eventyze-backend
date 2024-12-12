@@ -5,7 +5,7 @@ import {
   Roles,
   SubscriptionPlans,
   AccountStatus,
-} from "types/modelTypes";
+} from "../../types/modelTypes";
 
 export class User extends Model<UserAttributes> {}
 
@@ -30,12 +30,6 @@ User.init(
         msg: "Username already in use, please choose another",
       },
     },
-
-    // catch (error) {
-    //   if (error.name === 'SequelizeUniqueConstraintError') {
-    //     console.error(error.errors[0].message); // Logs: "Username already in use"
-    //     throw new Error('Username already in use'); // Rethrow or handle as needed
-    //   }
 
     email: {
       type: DataTypes.STRING,
@@ -133,9 +127,9 @@ User.init(
     },
 
     interests: {
-      type: DataTypes.ARRAY,
+      type: DataTypes.ARRAY(DataTypes.STRING),
       allowNull: true,
-    },
+    },    
 
     noOfFollowers: {
       type: DataTypes.INTEGER,
@@ -167,3 +161,12 @@ User.init(
 );
 
 export default User;
+
+
+
+
+    // catch (error) {
+    //   if (error.name === 'SequelizeUniqueConstraintError') {
+    //     console.error(error.errors[0].message); // Logs: "Username already in use"
+    //     throw new Error('Username already in use'); // Rethrow or handle as needed
+    //   }

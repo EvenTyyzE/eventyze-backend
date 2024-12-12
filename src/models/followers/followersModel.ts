@@ -37,15 +37,4 @@ Followers.init(
   }
 );
 
-// Define Associations
-User.hasOne(Followers, {
-  foreignKey: "userId",
-  as: "followers", // User model can access followers through this alias
-});
-
-Followers.belongsTo(User, {
-  foreignKey: "userId",
-  as: "user", // Followers model can access the user through this alias
-});
-
 export default Followers;

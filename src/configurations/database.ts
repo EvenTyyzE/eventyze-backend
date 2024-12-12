@@ -1,6 +1,5 @@
 import {Sequelize} from 'sequelize';
 import config from './config';
-import '../models/associations';
 
 
 const {
@@ -17,12 +16,15 @@ export const database = new Sequelize(
     DB_PASSWORD as string,
 {
     host: DB_HOST,
-    port: DB_PORT as unknown as number,
+    port: DB_PORT,
     dialect: "postgres",
     logging: false,
     dialectOptions: {
-        encrypt: true
-    },
+        encrypt: true,
+        ssl: {
+            rejectUnauthorized: false,
+        },
+}
 }
 
 )

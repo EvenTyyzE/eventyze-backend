@@ -62,12 +62,16 @@ const userDatabaseHelper = {
         where: filter,
         attributes: projection,
         include: [
-          { model: Wallet, attributes: ['totalBalance'] },
-          { model: Followings, attributes: ['followings'] },
-          { model: Followers, attributes: ['followers'] },
-        ],
+          // { model: Otp, as: 'userOtp' },
+          { model: Wallet, as: 'wallet' },
+          { model: Followers, as: 'userFollowers' },
+          { model: Followings, as: 'userFollowings' }
+        ]
   
       });
+      // const otp = await Otp.findOne({
+      //   include: [{ model: User, as: 'otpUser' }],
+      // });
       return user;
     } catch (error: any) {
       throw new Error(`Error fetching User: ${error.message}`);
