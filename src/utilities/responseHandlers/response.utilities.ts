@@ -16,15 +16,17 @@ const responseHandler = (
   response: Response,
   message: string,
   statusCode: number,
-  details?: any,
   data?: any,
+  details?: any,
+  info?: any
 ) => {
 
   return response.status(statusCode).json({
     status: statusCode === 201 || statusCode === 200 ? "success" : "error",
     message: message,
     data: data || null,
-    details
+    details,
+    info
   });
 };
 

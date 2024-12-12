@@ -1,8 +1,9 @@
 export interface ResponseDetails {
-    statusCode: number;
     message: string;
+    statusCode: number;
     data?: any
     details?: any
+    info?: any
 }
 
 export class QueryParameters {

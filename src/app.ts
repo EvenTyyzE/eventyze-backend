@@ -8,9 +8,9 @@ import cookieParser from "cookie-parser";
 import apiRouter from "./routes";
 import dotenv from 'dotenv';
 import { createServer } from "http";
-// import { connectDB } from "./configurations/database";
-import { PORT } from './configurations/envKeys';
+import config from "./configurations/config";
 import { errorUtilities } from './utilities';
+import './models/associations';
 
 const app = express();
 
@@ -40,15 +40,14 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Database
-// (async () => {
-//   try {
-//     await connectDB();
-//     console.log('Application is running...');
-//   } catch (error:any) {
-//     console.error('Failed to connect to database:', error.message);
-//     process.exit(1);
-//   }
-// })();
+// database
+//   .sync({})
+//   .then(() => {
+//     console.log("Database is connected");
+//   })
+//   .catch((err: HttpError) => {
+//     console.log(err);
+//   });
 
 // Routes
 app.use("/api", apiRouter);
@@ -67,8 +66,8 @@ app.use(errorUtilities.globalErrorHandler);
 /**
  * Server
  */
-server.listen(PORT, () => {
-  console.log(`server running on Port ${PORT}`);
+server.listen(config.PORT, () => {
+  console.log(`server running on Port ${config.PORT}`);
 });
 
 export default app;

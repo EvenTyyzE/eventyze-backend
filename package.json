@@ -8,7 +8,8 @@
     "compile": "tsc",
     "test": "cross-env NODE_ENV=development --max-old-space-size=4096 jest -i --colors --verbose --detectOpenHandles --coverage --forceExit --testTimeout=500000 __tests__",
     "test:watch": "cross-env NODE_ENV=development jest --watch",
-    "dev": "nodemon --exec"
+    "dev": "cross-env NODE_ENV=development nodemon",
+    "prod": "cross-env NODE_ENV=production ts-node src/app.ts"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +22,7 @@
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "cron": "^3.2.1",
+    "cross-env": "^7.0.3",
     "dotenv": "^16.4.5",
     "eslint": "^9.15.0",
     "express": "^4.21.1",

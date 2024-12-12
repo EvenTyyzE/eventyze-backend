@@ -1,12 +1,16 @@
 import { DataTypes, Model } from "sequelize";
 import { database } from "../../configurations/database";
-import { UserAttributes, Roles, SubscriptionPlans, AccountStatus } from "types/modelTypes";
+import {
+  UserAttributes,
+  Roles,
+  SubscriptionPlans,
+  AccountStatus,
+} from "types/modelTypes";
 
 export class User extends Model<UserAttributes> {}
 
 User.init(
   {
-
     id: {
       type: DataTypes.UUID,
       primaryKey: true,
@@ -15,15 +19,15 @@ User.init(
 
     fullName: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
 
     userName: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
       unique: {
-        name: 'unique_userName',
-        msg: 'Username already in use, please choose another',
+        name: "unique_userName",
+        msg: "Username already in use, please choose another",
       },
     },
 
@@ -37,14 +41,14 @@ User.init(
       type: DataTypes.STRING,
       allowNull: false,
       unique: {
-        name: 'unique_e,ail',
-        msg: 'Email already in use',
+        name: "unique_e,ail",
+        msg: "Email already in use",
       },
     },
 
     phone: {
-        type: DataTypes.STRING,
-        allowNull: true
+      type: DataTypes.STRING,
+      allowNull: true,
     },
 
     role: {
@@ -54,18 +58,17 @@ User.init(
         isIn: [Object.values(Roles)],
       },
     },
-    
 
     numberOfEventsHosted: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 0
+      defaultValue: 0,
     },
 
     numberOfEventsAttended: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 0
+      defaultValue: 0,
     },
 
     password: {
@@ -83,27 +86,27 @@ User.init(
 
     bio: {
       type: DataTypes.STRING,
-      allowNull: true
+      allowNull: true,
     },
 
     userImage: {
       type: DataTypes.STRING,
-      allowNull: true
+      allowNull: true,
     },
 
     country: {
       type: DataTypes.STRING,
-      allowNull: true
+      allowNull: true,
     },
 
-    isValidated: {
+    isVerified: {
       type: DataTypes.BOOLEAN,
-      defaultValue: false
+      defaultValue: false,
     },
 
     isBlacklisted: {
       type: DataTypes.BOOLEAN,
-      defaultValue: false
+      defaultValue: false,
     },
 
     subscriptionPlan: {
@@ -112,7 +115,7 @@ User.init(
       validate: {
         isIn: [Object.values(SubscriptionPlans)],
       },
-      defaultValue: SubscriptionPlans.Free
+      defaultValue: SubscriptionPlans.Free,
     },
 
     accountStatus: {
@@ -121,24 +124,27 @@ User.init(
       validate: {
         isIn: [Object.values(AccountStatus)],
       },
-      defaultValue: AccountStatus.Active
+      defaultValue: AccountStatus.Active,
     },
 
     refreshToken: {
       type: DataTypes.STRING,
-      allowNull: true
+      allowNull: true,
     },
 
     interests: {
       type: DataTypes.ARRAY,
-      allowNull: true
+      allowNull: true,
     },
-    
+
     noOfFollowers: {
       type: DataTypes.INTEGER,
-      defaultValue: 0
-    }
-
+      defaultValue: 0,
+    },
+    otp: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
   },
   {
     sequelize: database,

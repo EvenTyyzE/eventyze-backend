@@ -1,8 +1,11 @@
-import { ResponseDetails } from "../../types/utilities.types";
+import { ResponseDetails } from "../../types/generalTypes";
 import validator from "validator";
-import { userDatabase, generalHelpers, cartDatabase } from "../../helpers";
+import { userDatabase, generalHelpers } from "../../helpers";
 import { mailUtilities, errorUtilities } from "../../utilities";
 import { USERS_APP_BASE_URL } from '../../configurations/envKeys';
+import { Roles } from "types/modelTypes";
+import { v4 } from "uuid";
+import Otp from "models/otp/otpModel";
 
 const userRegistrationService = errorUtilities.withErrorHandling(async (
   userPayload: Record<string, any>
@@ -10,13 +13,12 @@ const userRegistrationService = errorUtilities.withErrorHandling(async (
     const responseHandler: ResponseDetails = {
       statusCode: 0,
       message: "",
+      data: {},
+      details: {},
+      info: {}
     };
 
-    const { name, email, password, phone } = userPayload;
-
-    if (!validator.isMobilePhone(phone, "en-NG")) {
-      throw errorUtilities.createError("Invalid phone number", 400);
-    }
+    const { email, password } = userPayload;
 
     if (!validator.isEmail(email)) {
       throw errorUtilities.createError("Invalid email", 400);
@@ -30,39 +32,27 @@ const userRegistrationService = errorUtilities.withErrorHandling(async (
       throw errorUtilities.createError("User already exists with this email", 400);
     }
 
+    const userId = v4()
+
     const payload = {
-      name,
+      id: userId,
       email,
       password: await generalHelpers.hashPassword(password),
-      phone,
-      role: "User",
+      role: Roles.User,
     };
+
+    const otpPayload = {
+        id: v4(),
+        userId,
+        otp: "",
+        expiresAt: "",
+        used: false
+    }
+
+    const newOtp = await Otp
 
     const newUser = await userDatabase.userDatabaseHelper.create(payload);
 
-    const tokenPayload = {
-      id: newUser._id,
-      role: newUser.role,
-      email: newUser.email,
-    };
-
-    const verificationToken = await generalHelpers.generateTokens(
-      tokenPayload,
-      "1h"
-    );
-
-    await cartDatabase.create({ userId: newUser._id, items: [] });
-
-    await mailUtilities.sendMail(newUser.email, "Click the button below to verify your account", "PLEASE VERIFY YOUR ACCOUNT", `${USERS_APP_BASE_URL}/verification/${verificationToken}, Verify`);
-
-    const userWithoutPassword = await userDatabase.userDatabaseHelper.extractUserDetails(newUser)
-
-    delete userWithoutPassword.refreshToken
-
-    responseHandler.statusCode = 201;
-    responseHandler.message = "User registered successfully. A verification mail has been sent to your account, please click on the link in the mail to verify your account. The link is valid for one hour only. Thank you.";
-    responseHandler.data = userWithoutPassword;
-    return responseHandler;
 
 });
 

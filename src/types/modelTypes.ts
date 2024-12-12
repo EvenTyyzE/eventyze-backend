@@ -1,3 +1,4 @@
+//================= USER ================//
 export interface UserAttributes {
     id: string;
     phone: string;
@@ -15,9 +16,10 @@ export interface UserAttributes {
     subscriptionPlan: string;
     accountStatus: string;
     interests: any;
-    isValidated: boolean;
+    isVerified: boolean;
     isBlacklisted: boolean;
     noOfFollowers: number;
+    otp: string;
 }
 
 export enum Roles {
@@ -44,13 +46,36 @@ export enum AccountStatus {
 }
 
 
-export interface MovieAttributes {
-    id: string;
-    title: string;
-    publishedDate: number;
-    description: string;
-    moviePoster: string;
-    movieProducer: string;
-    ownerId: string;
-    genre: string;
+
+//===========OTP=============//
+
+export interface OtpAttributes {
+    id: string
+    userId: string;
+    otp: string;
+    expiresAt: Date
+    used: boolean
   }
+
+
+//=============== WALLETS ================//
+
+export interface WalletAttributes {
+    id: string
+    userId: string;
+    totalBalance: number;
+  }
+
+//=============== FOLLOWERS && FOLLOWINGS =============//
+
+export interface FollowerAttributes {
+    id: string;
+    userId: string;
+    followers: string[];
+}
+
+export interface FollowingAttributes {
+    id: string;
+    userId: string;
+    followings: string[];
+}

@@ -1,5 +1,6 @@
 import {Sequelize} from 'sequelize';
 import config from './config';
+import '../models/associations';
 
 
 const {
