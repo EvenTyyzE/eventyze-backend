@@ -264,78 +264,122 @@ const userVerifiesOtp = errorUtilities.withErrorHandling(
 
 // });
 
-// const userLogin = errorUtilities.withErrorHandling(async (loginPayload: Record<string, any>) => {
+const userLogin = errorUtilities.withErrorHandling(async (loginPayload: Record<string, any>) => {
 
-//     const responseHandler: ResponseDetails = {
-//       statusCode: 0,
-//       message: "",
-//     };
+  const responseHandler: ResponseDetails = {
+    statusCode: 0,
+    message: "",
+    data: {},
+    details: {},
+    info: {},
+  };
 
-//     const { email, password } = loginPayload;
+    const { email, password } = loginPayload;
 
-//     const existingUser = await userDatabase.userDatabaseHelper.getOne({
-//       email,
-//     });
+    const projection = {
+      password: 1,
+      id: 1,
+      email: 1,
+      isVerified: 1,
+      isBlacklisted: 1,
+      role: 1,
+      numberOfEventsHosted: 1,
+      numberOfEventsAttended: 1,
+      bio: 1,
+      userImage: 1,
+      country: 1,
+      subscriptionPlan: 1,
+      interests: 1,
+      noOfFollowers: 1,
+      noOfFollowings: 1,
+      refreshToken: 1,
+    }
 
-//     if (!existingUser) {
-//         throw errorUtilities.createError(`User with email ${email} does not exist`, 404);
-//     }
+    const existingUser:any = await userDatabase.userDatabaseHelper.getOne({
+      email, projection
+    });
 
-//     if(!existingUser.isVerified){
-//         throw errorUtilities.createError(`User with email ${email} is not verified. Click on the link in the verification mail sent to ${email} or request for another verification mail`, 400);
-//     }
+    if (!existingUser) {
+        throw errorUtilities.createError(`User with email ${email} does not exist`, 404);
+    }
 
-//     if(existingUser.isBlacklisted){
-//         throw errorUtilities.createError(`Account Blocked, contact admin on info@naijamade.com`, 400)
-//     }
+    if(!existingUser.isVerified){
+        throw errorUtilities.createError(`${email} is not verified. Please request a new OTP to verify your account`, 400);
+    }
 
-//     const verifyPassword = await generalHelpers.validatePassword(
-//       password,
-//       existingUser.password
-//     );
+    if(existingUser.isBlacklisted){
+        throw errorUtilities.createError(`Account Blocked, contact admin on eventyzze@gmail.com`, 400)
+    }
 
-//     if (!verifyPassword) {
-//         throw errorUtilities.createError("Incorrect Password", 400);
-//     }
+    const verifyPassword = await generalHelpers.validatePassword(
+      password,
+      existingUser.password
+    );
 
-//     const tokenPayload = {
-//       id: existingUser._id,
-//       email: existingUser.email,
-//       role: existingUser.role
-//     };
+    if (!verifyPassword) {
+        throw errorUtilities.createError("Incorrect Password", 400);
+    }
 
-//     const accessToken = await generalHelpers.generateTokens(tokenPayload, "2h");
-//     const refreshToken = await generalHelpers.generateTokens(tokenPayload,"30d");
+    const tokenPayload = {
+      id: existingUser._id,
+      email: existingUser.email,
+      role: existingUser.role
+    };
 
-//     existingUser.refreshToken = refreshToken;
+    const accessToken = await generalHelpers.generateTokens(tokenPayload, "2h");
+    const refreshToken = await generalHelpers.generateTokens(tokenPayload,"30d");
 
-//     await existingUser.save();
+    let mailMessage = "";
+    let mailSubject = "";
 
-//     const userWithoutPassword = await userDatabase.userDatabaseHelper.extractUserDetails(existingUser);
+    const dateDetails = generalHelpers.dateFormatter(new Date())
 
-//     delete userWithoutPassword.refreshToken
+    if(!existingUser.refreshToken){
 
-//     const dateDetails = generalHelpers.dateFormatter(new Date())
-//     const mailMessage = `Hi ${existingUser.name}, <br /> There was a login to your account on ${dateDetails.date} by ${dateDetails.time}. If you did not initiate this login, click the button below to restrict your account. If it was you, please ignore. The link will expire in one hour.`;
-//     const mailLink = `${USERS_APP_BASE_URL}/restrict-account/${existingUser._id}`
-//     const mailButtonText = 'Restrict Account'
-//     const mailSubject = "Activity Detected on Your Account";
+      mailMessage = `Welcome to Eventyze ${existingUser.name},
+          Welcome to Eventyze, ${existingUser.name}!
 
-//     await mailUtilities.sendMail(existingUser.email, mailMessage, mailSubject, mailLink, mailButtonText)
+          We're excited to have you on board. Eventyze is your go-to platform for discovering, organizing, and sharing amazing events. Whether you're attending or hosting, we're here to make your experience seamless and enjoyable.
 
-//     responseHandler.statusCode = 200;
+          If you have any questions or need help getting started, feel free to reach out to our support team. We're always here to assist you.
 
-//     responseHandler.message = `Welcome back ${userWithoutPassword.name}`;
+          Let's make some unforgettable moments together!
 
-//     responseHandler.data = {
-//       user: userWithoutPassword,
-//       accessToken: accessToken,
-//       refreshToken: refreshToken,
-//     };
+          Best regards,  
+          The Eventyze Team`;
 
-//     return responseHandler;
+      mailSubject = `Welcome to Eventyze ${existingUser.name}`
 
-// });
+    }else {
+
+      mailSubject = "Activity Detected on Your Account"
+      mailMessage = `Hi ${existingUser.name}, <br /> There was a login to your account on ${dateDetails.date} by ${dateDetails.time}. If you did not initiate this login, contact our support team to restrict your account. If it was you, please ignore.`;
+
+    }
+
+    existingUser.refreshToken = refreshToken;
+
+    await existingUser.save();
+
+    const userWithoutPassword = await userDatabase.userDatabaseHelper.extractUserDetails(existingUser);
+
+    delete userWithoutPassword.refreshToken
+
+    await mailUtilities.sendMail(existingUser.email, mailMessage, mailSubject)
+
+    responseHandler.statusCode = 200;
+
+    responseHandler.message = `Welcome back ${existingUser.name}`;
+
+    responseHandler.data = {
+      user: userWithoutPassword,
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+    };
+
+    return responseHandler;
+
+});
 
 // const verifyUserAccount = errorUtilities.withErrorHandling(async (verificationToken: string): Promise<any> => {
 
@@ -410,6 +454,7 @@ const userVerifiesOtp = errorUtilities.withErrorHandling(
 export default {
   userRegisterWithEmailService,
   userVerifiesOtp,
+  userLogin,
   // adminRegistrationService,
   // userLogin,
   // verifyUserAccount,

@@ -64,7 +64,7 @@ const userDatabaseHelper = {
           { model: Wallet, as: 'wallet' },
           { model: Followers, as: 'userFollowers' },
           { model: Followings, as: 'userFollowings' }
-        ] : [], // Return an empty array if `include` is false or undefined
+        ] : []
       });
       return user;
     } catch (error: any) {

@@ -71,21 +71,21 @@ const generateTokens = async (
 // };
 
 
-// const dateFormatter = (dateString: Date) => {
-//   const year = dateString.getFullYear();
-//   const month = dateString.getMonth() + 1;
-//   const day = dateString.getDate();
-//   const hours = dateString.getHours();
-//   const minutes = dateString.getMinutes();
-//   const seconds = dateString.getSeconds();
-//   const date = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-//   const time = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+const dateFormatter = (dateString: Date) => {
+  const year = dateString.getFullYear();
+  const month = dateString.getMonth() + 1;
+  const day = dateString.getDate();
+  const hours = dateString.getHours();
+  const minutes = dateString.getMinutes();
+  const seconds = dateString.getSeconds();
+  const date = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+  const time = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 
-//   return {
-//     date,
-//     time
-//   };
-// };
+  return {
+    date,
+    time
+  };
+};
 
 
 // const refreshUserToken = async (
@@ -210,6 +210,6 @@ export default {
   generateTokens,
   verifyOtp,
   // refreshUserToken,
-  // dateFormatter,
+  dateFormatter,
   // verifyRegistrationToken
 };
