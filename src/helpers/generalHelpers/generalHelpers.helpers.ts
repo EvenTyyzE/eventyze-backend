@@ -140,13 +140,10 @@ const generateTokens = async (
     return otpReturn;
   };
   
-  // const verifyOtp = async (userId:string, otp:string) => {
-  //   const record = await Otp.findOne({ userId, otp, used: false });
-  //   if (!record || record.expiresAt < new Date()) return false;
-  //   record.used = true;
-  //   await record.save();
-  //   return true;
-  // };
+  const verifyOtp = async (otp:Record<string, any>) => {
+    if (otp.expiresAt < new Date()) return false;
+    return true;
+  };
 
 
   //This function is used to manage queries (request.query) for the application  
@@ -211,6 +208,7 @@ export default {
   validatePassword,
   generateOtp,
   generateTokens,
+  verifyOtp,
   // refreshUserToken,
   // dateFormatter,
   // verifyRegistrationToken

@@ -1,5 +1,5 @@
-import userAuthService from './authServices/allUsersAuthentication.services';
+import userEmailAuthService from './authServices/emailAuth';
 
 export {
-    userAuthService,
+    userEmailAuthService,
 }

@@ -17,9 +17,8 @@ const userDatabaseHelper = {
 
   updateOne: async (filter: any, update: any, transaction?: Transaction) => {
     try {
-      const user = await User.findOne({ where: filter });
-      if (!user) throw new Error("User not found");
-      await user.update(update);
+      const user:any = await User.findOne({ where: filter });
+      await user.update(update, { transaction });
       return user;
     } catch (error: any) {
       throw new Error(`Error updating User: ${error.message}`);
@@ -56,27 +55,23 @@ const userDatabaseHelper = {
     }
   },
 
-  getOne: async (filter: Record<string, any>, projection?: any,) => {
+  getOne: async (filter: Record<string, any>, projection: any = null, include: boolean = false) => {
     try {
       const user = await User.findOne({
         where: filter,
         attributes: projection,
-        include: [
-          // { model: Otp, as: 'userOtp' },
+        include: include ? [
           { model: Wallet, as: 'wallet' },
           { model: Followers, as: 'userFollowers' },
           { model: Followings, as: 'userFollowings' }
-        ]
-  
+        ] : [], // Return an empty array if `include` is false or undefined
       });
-      // const otp = await Otp.findOne({
-      //   include: [{ model: User, as: 'otpUser' }],
-      // });
       return user;
     } catch (error: any) {
       throw new Error(`Error fetching User: ${error.message}`);
     }
   },
+  
 
   getMany: async (filter: any, projection?: any, options?: any) => {
     try {

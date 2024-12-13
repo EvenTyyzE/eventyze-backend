@@ -2,8 +2,8 @@ import { ResponseDetails } from "../../types/generalTypes";
 import validator from "validator";
 import { userDatabase, generalHelpers } from "../../helpers";
 import { mailUtilities, errorUtilities } from "../../utilities";
-import { USERS_APP_BASE_URL } from '../../configurations/envKeys';
-import { Roles } from "types/modelTypes";
+import { USERS_APP_BASE_URL } from "../../configurations/envKeys";
+import { Roles } from "../../types/modelTypes";
 import { v4 } from "uuid";
 import otpDatabaseHelpers from "../../helpers/databaseHelpers/otpDatabase.helpers";
 import walletDatabaseHelperHelpers from "../../helpers/databaseHelpers/walletDatabaseHelper.helpers";
@@ -12,16 +12,14 @@ import followingsDatabaseHelpersHelpers from "../../helpers/databaseHelpers/foll
 import { Transaction } from "sequelize";
 import performTransaction from "../../middlewares/databaseTransactions.middleware";
 
-
-const userRegistrationService = errorUtilities.withErrorHandling(async (
-  userPayload: Record<string, any>
-): Promise<Record<string, any>> => {
+const userRegisterWithEmailService = errorUtilities.withErrorHandling(
+  async (userPayload: Record<string, any>): Promise<Record<string, any>> => {
     const responseHandler: ResponseDetails = {
       statusCode: 0,
       message: "",
       data: {},
       details: {},
-      info: {}
+      info: {},
     };
 
     const { email, password } = userPayload;
@@ -30,47 +28,48 @@ const userRegistrationService = errorUtilities.withErrorHandling(async (
       throw errorUtilities.createError("Invalid email", 400);
     }
 
-    const existingUser:any = await userDatabase.userDatabaseHelper.getOne({
+    const existingUser: any = await userDatabase.userDatabaseHelper.getOne({
       email,
     });
 
     if (existingUser) {
-      throw errorUtilities.createError("User already exists with this email", 400);
+      throw errorUtilities.createError(
+        "User already exists with this email",
+        400
+      );
     }
 
-    const userId = v4()
+    const userId = v4();
 
-    const { otp, expiresAt } = await generalHelpers.generateOtp()
+    const { otp, expiresAt } = await generalHelpers.generateOtp();
 
-    const otpId = v4()
+    const otpId = v4();
 
     const otpPayload = {
-        id: otpId,
-        userId,
-        otp,
-        expiresAt,
-        used: false
-    }
-
-    await otpDatabaseHelpers.otpDatabaseHelper.create(otpPayload)
+      id: otpId,
+      userId,
+      otp,
+      expiresAt,
+      used: false,
+    };
 
     const walletPayload = {
       id: v4(),
       userId,
-      totalBalance: 0
-    }
+      totalBalance: 0,
+    };
 
     const followersPayload = {
       id: v4(),
       userId,
-      followers: []
-    }
+      followers: [],
+    };
 
     const followingsPayload = {
       id: v4(),
       userId,
-      followings: []
-    }
+      followings: [],
+    };
 
     const userCreationPayload = {
       id: userId,
@@ -79,48 +78,146 @@ const userRegistrationService = errorUtilities.withErrorHandling(async (
       otp: {
         otp,
         otpId,
-        expiresAt
+        expiresAt,
       },
       role: Roles.User,
     };
 
     const operations = [
       async (transaction: Transaction) => {
-        await userDatabase.userDatabaseHelper.create(userCreationPayload, transaction);
+        await userDatabase.userDatabaseHelper.create(
+          userCreationPayload,
+          transaction
+        );
       },
 
       async (transaction: Transaction) => {
-        await walletDatabaseHelperHelpers.walletDatabaseHelpers.create(walletPayload, transaction);
+        await walletDatabaseHelperHelpers.walletDatabaseHelpers.create(
+          walletPayload,
+          transaction
+        );
       },
 
       async (transaction: Transaction) => {
-        await followersDatabaseHelpersHelpers.followersDatabaseHelpers.create(followersPayload, transaction);
+        await followersDatabaseHelpersHelpers.followersDatabaseHelpers.create(
+          followersPayload,
+          transaction
+        );
       },
 
       async (transaction: Transaction) => {
-        await followingsDatabaseHelpersHelpers.followingsDatabaseHelpers.create(followingsPayload, transaction);
+        await followingsDatabaseHelpersHelpers.followingsDatabaseHelpers.create(
+          followingsPayload,
+          transaction
+        );
+      },
+
+      async (transaction: Transaction) => {
+        await otpDatabaseHelpers.otpDatabaseHelper.create(
+          otpPayload,
+          transaction
+        );
       },
     ];
 
-    
     await performTransaction.performTransaction(operations);
 
+    const user: any = await userDatabase.userDatabaseHelper.getOne({
+      id: userId,
+    });
 
-    const user:any = await userDatabase.userDatabaseHelper.getOne({userId})
-    
     await mailUtilities.sendMail(
       email,
       `Welcome to Eventyze, your OTP is ${otp}, it expires in 5 minutes`,
-      'Eventyze OTP'
-    )
+      "Eventyze OTP"
+    );
 
     responseHandler.statusCode = 201;
     responseHandler.message = "User created successfully";
-    responseHandler.data = user
+    responseHandler.data = user;
     return responseHandler;
+  }
+);
 
-});
+const userVerifiesOtp = errorUtilities.withErrorHandling(
+  async (userPayload: Record<string, any>): Promise<Record<string, any>> => {
+    const responseHandler: ResponseDetails = {
+      statusCode: 0,
+      message: "",
+      data: {},
+      details: {},
+      info: {},
+    };
 
+    const { otp, userId } = userPayload;
+
+    const projection = {
+      otp: 1,
+    };
+
+    const user: any = await userDatabase.userDatabaseHelper.getOne(
+      { id: userId },
+      projection,
+      false
+    );
+
+    const otpFinder: any = await otpDatabaseHelpers.otpDatabaseHelper.getOne({
+      id: user.otp.otpId,
+      otp
+    });
+
+    if (!otpFinder || otpFinder.used) {
+      throw errorUtilities.createError(
+        "Invalid OTP. Please request a new OTP",
+        400
+      );
+    }
+
+    const verify = await generalHelpers.verifyOtp(otpFinder);
+
+    if (!verify) {
+      throw errorUtilities.createError(
+        "OTP expired. Please request a new OTP",
+        400
+      );
+    }
+
+    const operations = [
+      async (transaction: Transaction) => {
+        await otpDatabaseHelpers.otpDatabaseHelper.updateOne(
+          { id: otpFinder.id },
+          { used: true },
+          transaction
+        );
+      },
+
+      async (transaction: Transaction) => {
+        await userDatabase.userDatabaseHelper.updateOne(
+          { id: userId },
+          { otp: null, isVerified: true },
+          transaction
+        );
+      },
+    ];
+
+    await performTransaction.performTransaction(operations);
+
+    const mainUser: any = await userDatabase.userDatabaseHelper.getOne({
+      id: userId,
+    });
+
+    await mailUtilities.sendMail(
+      mainUser.email,
+      `Welcome to Eventyze, your email has been verified successfully. You can now login and start hosting your events 😊`,
+      "Email Verified"
+    );
+
+    responseHandler.statusCode = 200;
+    responseHandler.message = "Account verified successfully";
+    responseHandler.data = mainUser;
+    return responseHandler;
+  }
+);
 // const adminRegistrationService = errorUtilities.withErrorHandling(async (userPayload: Record<string, any>) => {
 
 //     const responseHandler: ResponseDetails = {
@@ -240,7 +337,6 @@ const userRegistrationService = errorUtilities.withErrorHandling(async (
 
 // });
 
-
 // const verifyUserAccount = errorUtilities.withErrorHandling(async (verificationToken: string): Promise<any> => {
 
 //   const responseHandler: ResponseDetails = {
@@ -312,7 +408,8 @@ const userRegistrationService = errorUtilities.withErrorHandling(async (
 // })
 
 export default {
-  userRegistrationService,
+  userRegisterWithEmailService,
+  userVerifiesOtp,
   // adminRegistrationService,
   // userLogin,
   // verifyUserAccount,

@@ -7,8 +7,6 @@ const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d\W]{8,}$/
 const inputValidator = (schema: Joi.Schema):any => {
     return async (request: Request, response: Response, next: NextFunction):Promise<any> => {
       try {
-        console.log('Request Body:', request.body);
-        console.log('Using Schema:', schema.describe())
         const { error } = schema.validate(request.body);
         if (error) {
           return response.status(400).json({
@@ -34,6 +32,10 @@ const userRegisterSchemaViaEmail = Joi.object({
   }),
 });
 
+const verifyOtpSchema = Joi.object({
+  userId: Joi.string().required(),
+  otp: Joi.string().required().min(5)
+})
 
 const loginUserSchemaViaEmail = Joi.object({
     email: Joi.string().required().email(),
@@ -44,5 +46,6 @@ const loginUserSchemaViaEmail = Joi.object({
 export default {
   userRegisterSchemaViaEmail,
   loginUserSchemaViaEmail,
+  verifyOtpSchema,
   inputValidator
 }

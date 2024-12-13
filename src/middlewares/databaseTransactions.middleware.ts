@@ -17,8 +17,8 @@ const performTransaction = async (
       console.log("Transaction committed successfully");
     } catch (error: any) {
       await transaction.rollback();
-      console.error("Transaction aborted due to an error:", error);
-      throw new Error(`Transaction failed: ${error.message}`);
+      console.error("Transaction aborted due to an error:", error.message);
+      throw new Error(`An error occured, please try again`);
     }
   };
   
