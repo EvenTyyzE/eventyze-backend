@@ -28,7 +28,7 @@ const userRegisterWithEmailService = errorUtilities.withErrorHandling(
       throw errorUtilities.createError("Invalid email", 400);
     }
 
-    const existingUser: any = await userDatabase.userDatabaseHelper.getOne({email}, {email: 1});
+    const existingUser: any = await userDatabase.userDatabaseHelper.getOne({email}, ['email']);
 
     if (existingUser) {
       throw errorUtilities.createError(
@@ -126,7 +126,7 @@ const userRegisterWithEmailService = errorUtilities.withErrorHandling(
 
     await mailUtilities.sendMail(
       email,
-      `Welcome to Eventyze, your OTP is ${otp}, it expires in 5 minutes`,
+      `Welcome to Eventyze, your OTP is ${otp}, it expires in 10 minutes`,
       "Eventyze OTP"
     );
 
@@ -149,9 +149,7 @@ const userVerifiesOtp = errorUtilities.withErrorHandling(
 
     const { otp, userId } = userPayload;
 
-    const projection = {
-      otp: 1,
-    };
+    const projection = ['otp'];
 
     const user: any = await userDatabase.userDatabaseHelper.getOne(
       { id: userId },
@@ -229,24 +227,24 @@ const userLogin = errorUtilities.withErrorHandling(
 
     const { email, password } = loginPayload;
 
-    const projection = {
-      password: 1,
-      id: 1,
-      email: 1,
-      isVerified: 1,
-      isBlacklisted: 1,
-      role: 1,
-      numberOfEventsHosted: 1,
-      numberOfEventsAttended: 1,
-      bio: 1,
-      userImage: 1,
-      country: 1,
-      subscriptionPlan: 1,
-      interests: 1,
-      noOfFollowers: 1,
-      noOfFollowings: 1,
-      refreshToken: 1,
-    };
+    const projection = [
+      'password',
+      'id',
+      'email',
+      'isVerified',
+      'isBlacklisted',
+      'role',
+      'numberOfEventsHosted',
+      'numberOfEventsAttended',
+      'bio',
+      'userImage',
+      'country',
+      'subscriptionPlan',
+      'interests',
+      'noOfFollowers',
+      'noOfFollowings',
+      'refreshToken',
+    ];
 
     const filter = { email };
 
@@ -351,7 +349,7 @@ const userLogin = errorUtilities.withErrorHandling(
   }
 );
 
-const userResendsOtp = errorUtilities.withErrorHandling(
+const userResendsOtpService = errorUtilities.withErrorHandling(
   async (resendPayload: Record<string, any>) => {
 
     const responseHandler: ResponseDetails = {
@@ -364,11 +362,19 @@ const userResendsOtp = errorUtilities.withErrorHandling(
 
     const { email, userId } = resendPayload;
 
-    const user:any = await userDatabase.userDatabaseHelper.getOne({email}, {email: 1, otp: 1})
+    const user:any = await userDatabase.userDatabaseHelper.getOne({email}, ['email', 'otp', 'isVerified'])
+
+    if(user.isVerified){
+      responseHandler.statusCode = 400;
+      responseHandler.message = "Account already verified, please login";
+      return responseHandler;
+    }
+
 
     const otpDetails = user.otp
 
-    if(otpDetails.expiresAt > new Date()){
+    if(new Date(otpDetails.expiresAt) > new Date()){
+
       await mailUtilities.sendMail(
         email,
         `Welcome to Eventyze, your OTP is ${otpDetails.otp}, it expires soon`,
@@ -422,7 +428,7 @@ const userResendsOtp = errorUtilities.withErrorHandling(
 
      await mailUtilities.sendMail(
         email,
-        `Welcome to Eventyze, your OTP is ${otpDetails.otp}, it expires soon`,
+        `Welcome to Eventyze, your OTP is ${otp}, it expires in 10 minutes`,
         "Eventyze OTP"
       );
 
@@ -551,6 +557,7 @@ export default {
   userRegisterWithEmailService,
   userVerifiesOtp,
   userLogin,
+  userResendsOtpService,
   // adminRegistrationService,
   // userLogin,
   // verifyUserAccount,

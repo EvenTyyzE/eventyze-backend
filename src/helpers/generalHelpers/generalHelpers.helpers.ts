@@ -1,5 +1,6 @@
 import brcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import otpGenerator from 'otp-generator';
 import { APP_SECRET } from '../../configurations/envKeys';
 // import { ResponseDetails } from '../../types/utilities.types';
 // import { errorUtilities } from '../../utilities';
@@ -134,14 +135,14 @@ const dateFormatter = (dateString: Date) => {
 //   };
 
   const generateOtp = async () => {
-    const otp = Math.floor(100000 + Math.random() * 90000).toString();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    const otp = otpGenerator.generate(5, { upperCaseAlphabets: false, specialChars: false, digits: true, lowerCaseAlphabets: false })
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
     const otpReturn = ({ otp, expiresAt });
     return otpReturn;
   };
   
   const verifyOtp = async (otp:Record<string, any>) => {
-    if (otp.expiresAt < new Date()) return false;
+    if (new Date(otp.expiresAt) < new Date()) return false;
     return true;
   };
 

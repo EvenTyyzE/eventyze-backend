@@ -60,8 +60,27 @@ const userLoginWithEmail = async (
   );
 };
 
+const userResendsOtp = async (
+  request: Request,
+  response: Response
+): Promise<any> => {
+
+  const { email, userId } = request.query
+
+  const resentOtp: any = await userEmailAuthService.userResendsOtpService({ email, userId });
+  
+  return responseUtilities.responseHandler(
+    response,
+    resentOtp.message,
+    resentOtp.statusCode,
+    resentOtp.details,
+    resentOtp.data,
+  );
+};
+
 export default {
   userRegisterWithEmail,
   userVerifiesOtp,
   userLoginWithEmail,
+  userResendsOtp
 };
