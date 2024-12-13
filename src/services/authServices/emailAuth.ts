@@ -163,7 +163,7 @@ const userVerifiesOtp = errorUtilities.withErrorHandling(
 
     const otpFinder: any = await otpDatabaseHelpers.otpDatabaseHelper.getOne({
       id: user.otp.otpId,
-      otp
+      otp,
     });
 
     if (!otpFinder || otpFinder.used) {
@@ -218,6 +218,141 @@ const userVerifiesOtp = errorUtilities.withErrorHandling(
     return responseHandler;
   }
 );
+
+const userLogin = errorUtilities.withErrorHandling(
+  async (loginPayload: Record<string, any>) => {
+    const responseHandler: ResponseDetails = {
+      statusCode: 0,
+      message: "",
+      data: {},
+      details: {},
+      info: {},
+    };
+
+    const { email, password } = loginPayload;
+
+    const projection = {
+      password: 1,
+      id: 1,
+      email: 1,
+      isVerified: 1,
+      isBlacklisted: 1,
+      role: 1,
+      numberOfEventsHosted: 1,
+      numberOfEventsAttended: 1,
+      bio: 1,
+      userImage: 1,
+      country: 1,
+      subscriptionPlan: 1,
+      interests: 1,
+      noOfFollowers: 1,
+      noOfFollowings: 1,
+      refreshToken: 1,
+    };
+
+    const filter = { email };
+
+    const existingUser: any = await userDatabase.userDatabaseHelper.getOne(
+      filter,
+      projection
+    );
+
+    if (!existingUser) {
+      throw errorUtilities.createError(
+        `User with email ${email} does not exist`,
+        404
+      );
+    }
+
+    if (!existingUser.isVerified) {
+      throw errorUtilities.createError(
+        `${email} is not verified. Please request a new OTP to verify your account`,
+        400
+      );
+    }
+
+    if (existingUser.isBlacklisted) {
+      throw errorUtilities.createError(
+        `Account Blocked, contact admin on eventyzze@gmail.com`,
+        400
+      );
+    }
+
+    const verifyPassword = await generalHelpers.validatePassword(
+      password,
+      existingUser.password
+    );
+
+    if (!verifyPassword) {
+      throw errorUtilities.createError("Incorrect Password", 400);
+    }
+
+    const tokenPayload = {
+      id: existingUser._id,
+      email: existingUser.email,
+      role: existingUser.role,
+    };
+
+    const accessToken = await generalHelpers.generateTokens(tokenPayload, "2h");
+    const refreshToken = await generalHelpers.generateTokens(
+      tokenPayload,
+      "30d"
+    );
+
+    let mailMessage = "";
+    let mailSubject = "";
+
+    const dateDetails = generalHelpers.dateFormatter(new Date());
+
+    if (!existingUser.refreshToken) {
+      mailMessage = `Welcome to Eventyze ${
+        existingUser.name ? existingUser.name : ""
+      }! <br /><br />
+
+          We're excited to have you on board. Eventyze is your go-to platform for discovering, organizing, and sharing amazing events. Whether you're attending or hosting, we're here to make your experience seamless and enjoyable. <br /> <br />
+
+          If you have any questions or need help getting started, feel free to reach out to our support team. We're always here to assist you. <br /> <br />
+
+          Let's make some unforgettable moments together!`;
+
+      mailSubject = `Welcome to Eventyze ${
+        existingUser.name ? existingUser.name : ""
+      }`;
+    } else {
+      mailSubject = "Activity Detected on Your Account";
+      mailMessage = `Hi ${
+        existingUser.name ? existingUser.name : ""
+      },
+      There was a login to your account on ${dateDetails.date} by ${
+        dateDetails.time
+      }.<br /><br /> If you did not initiate this login, contact our support team to restrict your account. If it was you, please ignore.`;
+    }
+
+    existingUser.refreshToken = refreshToken;
+
+    await existingUser.save();
+
+    const userWithoutPassword =
+      await userDatabase.userDatabaseHelper.extractUserDetails(existingUser);
+
+    delete userWithoutPassword.refreshToken;
+
+    await mailUtilities.sendMail(existingUser.email, mailMessage, mailSubject);
+
+    responseHandler.statusCode = 200;
+
+    responseHandler.message = "Welcome back" + `${existingUser.name ? existingUser.name : ""}`;
+
+    responseHandler.data = {
+      user: userWithoutPassword,
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+    };
+
+    return responseHandler;
+  }
+);
+
 // const adminRegistrationService = errorUtilities.withErrorHandling(async (userPayload: Record<string, any>) => {
 
 //     const responseHandler: ResponseDetails = {
@@ -263,123 +398,6 @@ const userVerifiesOtp = errorUtilities.withErrorHandling(
 //     return responseHandler;
 
 // });
-
-const userLogin = errorUtilities.withErrorHandling(async (loginPayload: Record<string, any>) => {
-
-  const responseHandler: ResponseDetails = {
-    statusCode: 0,
-    message: "",
-    data: {},
-    details: {},
-    info: {},
-  };
-
-    const { email, password } = loginPayload;
-
-    const projection = {
-      password: 1,
-      id: 1,
-      email: 1,
-      isVerified: 1,
-      isBlacklisted: 1,
-      role: 1,
-      numberOfEventsHosted: 1,
-      numberOfEventsAttended: 1,
-      bio: 1,
-      userImage: 1,
-      country: 1,
-      subscriptionPlan: 1,
-      interests: 1,
-      noOfFollowers: 1,
-      noOfFollowings: 1,
-      refreshToken: 1,
-    }
-
-    const existingUser:any = await userDatabase.userDatabaseHelper.getOne({
-      email, projection
-    });
-
-    if (!existingUser) {
-        throw errorUtilities.createError(`User with email ${email} does not exist`, 404);
-    }
-
-    if(!existingUser.isVerified){
-        throw errorUtilities.createError(`${email} is not verified. Please request a new OTP to verify your account`, 400);
-    }
-
-    if(existingUser.isBlacklisted){
-        throw errorUtilities.createError(`Account Blocked, contact admin on eventyzze@gmail.com`, 400)
-    }
-
-    const verifyPassword = await generalHelpers.validatePassword(
-      password,
-      existingUser.password
-    );
-
-    if (!verifyPassword) {
-        throw errorUtilities.createError("Incorrect Password", 400);
-    }
-
-    const tokenPayload = {
-      id: existingUser._id,
-      email: existingUser.email,
-      role: existingUser.role
-    };
-
-    const accessToken = await generalHelpers.generateTokens(tokenPayload, "2h");
-    const refreshToken = await generalHelpers.generateTokens(tokenPayload,"30d");
-
-    let mailMessage = "";
-    let mailSubject = "";
-
-    const dateDetails = generalHelpers.dateFormatter(new Date())
-
-    if(!existingUser.refreshToken){
-
-      mailMessage = `Welcome to Eventyze ${existingUser.name},
-          Welcome to Eventyze, ${existingUser.name}!
-
-          We're excited to have you on board. Eventyze is your go-to platform for discovering, organizing, and sharing amazing events. Whether you're attending or hosting, we're here to make your experience seamless and enjoyable.
-
-          If you have any questions or need help getting started, feel free to reach out to our support team. We're always here to assist you.
-
-          Let's make some unforgettable moments together!
-
-          Best regards,  
-          The Eventyze Team`;
-
-      mailSubject = `Welcome to Eventyze ${existingUser.name}`
-
-    }else {
-
-      mailSubject = "Activity Detected on Your Account"
-      mailMessage = `Hi ${existingUser.name}, <br /> There was a login to your account on ${dateDetails.date} by ${dateDetails.time}. If you did not initiate this login, contact our support team to restrict your account. If it was you, please ignore.`;
-
-    }
-
-    existingUser.refreshToken = refreshToken;
-
-    await existingUser.save();
-
-    const userWithoutPassword = await userDatabase.userDatabaseHelper.extractUserDetails(existingUser);
-
-    delete userWithoutPassword.refreshToken
-
-    await mailUtilities.sendMail(existingUser.email, mailMessage, mailSubject)
-
-    responseHandler.statusCode = 200;
-
-    responseHandler.message = `Welcome back ${existingUser.name}`;
-
-    responseHandler.data = {
-      user: userWithoutPassword,
-      accessToken: accessToken,
-      refreshToken: refreshToken,
-    };
-
-    return responseHandler;
-
-});
 
 // const verifyUserAccount = errorUtilities.withErrorHandling(async (verificationToken: string): Promise<any> => {
 

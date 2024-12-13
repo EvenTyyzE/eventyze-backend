@@ -38,29 +38,30 @@ const userVerifiesOtp = async (
     newUser.data
   );
 };
-// const userLoginWithEmail = async (
-//   request: Request,
-//   response: Response
-// ): Promise<any> => {
-//   const loggedInUser: any = await userAuthService.userLogin(request.body);
 
-//   if(loggedInUser.statusCode === 200){
-//   response
-//     .header("x-access-token", loggedInUser.data.accessToken)
-//     .header("x-refresh-token", loggedInUser.data.refreshToken);
-//   }
+const userLoginWithEmail = async (
+  request: Request,
+  response: Response
+): Promise<any> => {
+  const loggedInUser: any = await userEmailAuthService.userLogin(request.body);
+
+  if(loggedInUser.statusCode === 200){
+  response
+    .header("x-access-token", loggedInUser.data.accessToken)
+    .header("x-refresh-token", loggedInUser.data.refreshToken);
+  }
   
-//   return responseUtilities.responseHandler(
-//     response,
-//     loggedInUser.message,
-//     loggedInUser.statusCode,
-//     loggedInUser.details,
-//     loggedInUser.data,
-//   );
-// };
+  return responseUtilities.responseHandler(
+    response,
+    loggedInUser.message,
+    loggedInUser.statusCode,
+    loggedInUser.details,
+    loggedInUser.data,
+  );
+};
 
 export default {
   userRegisterWithEmail,
   userVerifiesOtp,
-  // userLoginWithEmail,
+  userLoginWithEmail,
 };

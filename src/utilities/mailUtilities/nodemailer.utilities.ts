@@ -33,8 +33,8 @@ const sendMail = async (
           </p>
           ${actionLink ? `<a href="${actionLink}" style="text-decoration: none; color: white; display: inline-block; background-color: #27AE60; padding: 10px 20px; border-radius: 10px;">${actionText}</a>` : ""}
           <p style="font-size: 18px; color: #2e8b57; margin: 10px 0;">
-            Thank You<br />
-            <strong style="color: #ff4500;">Eventyze Team</strong>
+            Best regards,<br />
+            <strong style="color: #ff4500;">The Eventyze Team</strong>
           </p>
         </div>
         `
