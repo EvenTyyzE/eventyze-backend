@@ -28,9 +28,7 @@ const userRegisterWithEmailService = errorUtilities.withErrorHandling(
       throw errorUtilities.createError("Invalid email", 400);
     }
 
-    const existingUser: any = await userDatabase.userDatabaseHelper.getOne({
-      email,
-    });
+    const existingUser: any = await userDatabase.userDatabaseHelper.getOne({email}, {email: 1});
 
     if (existingUser) {
       throw errorUtilities.createError(
@@ -133,7 +131,7 @@ const userRegisterWithEmailService = errorUtilities.withErrorHandling(
     );
 
     responseHandler.statusCode = 201;
-    responseHandler.message = "User created successfully";
+    responseHandler.message = "User created successfully, an OTP has been sent to your mail for email verification";
     responseHandler.data = user;
     return responseHandler;
   }
@@ -353,6 +351,86 @@ const userLogin = errorUtilities.withErrorHandling(
   }
 );
 
+const userResendsOtp = errorUtilities.withErrorHandling(
+  async (resendPayload: Record<string, any>) => {
+
+    const responseHandler: ResponseDetails = {
+      statusCode: 0,
+      message: "",
+      data: {},
+      details: {},
+      info: {},
+    };
+
+    const { email, userId } = resendPayload;
+
+    const user:any = await userDatabase.userDatabaseHelper.getOne({email}, {email: 1, otp: 1})
+
+    const otpDetails = user.otp
+
+    if(otpDetails.expiresAt > new Date()){
+      await mailUtilities.sendMail(
+        email,
+        `Welcome to Eventyze, your OTP is ${otpDetails.otp}, it expires soon`,
+        "Eventyze OTP"
+      );
+
+      responseHandler.statusCode = 200;
+      responseHandler.message = "OTP has been resent successfully, please check your mail";
+      return responseHandler;
+
+    }
+
+    const { otp, expiresAt } = await generalHelpers.generateOtp();
+
+    const otpId = v4();
+
+    const otpPayload = {
+      id: otpId,
+      userId,
+      otp,
+      expiresAt,
+      used: false,
+    };
+
+    const userUpdatePayload = {
+      otp: {
+      otp,
+      otpId,
+      expiresAt,
+      }
+    }
+
+    const operations = [
+      async (transaction: Transaction) => {
+        await otpDatabaseHelpers.otpDatabaseHelper.create(
+          otpPayload,
+          transaction
+        );
+      },
+
+      async (transaction: Transaction) => {
+        await userDatabase.userDatabaseHelper.updateOne(
+          { id: userId },
+          userUpdatePayload,
+          transaction
+        );
+      },
+    ]
+
+    await performTransaction.performTransaction(operations);
+
+     await mailUtilities.sendMail(
+        email,
+        `Welcome to Eventyze, your OTP is ${otpDetails.otp}, it expires soon`,
+        "Eventyze OTP"
+      );
+
+      responseHandler.statusCode = 200;
+      responseHandler.message = "OTP has been resent successfully, please check your mail";
+      return responseHandler;
+
+  })
 // const adminRegistrationService = errorUtilities.withErrorHandling(async (userPayload: Record<string, any>) => {
 
 //     const responseHandler: ResponseDetails = {
