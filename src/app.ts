@@ -10,6 +10,8 @@ import dotenv from 'dotenv';
 import { createServer } from "http";
 import config from "./configurations/config";
 import { errorUtilities } from './utilities';
+import { HttpError } from "http-errors";
+import { database, } from './configurations/database';
 import './models/associations';
 
 const app = express();
@@ -40,14 +42,15 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Database
-// database
-//   .sync({})
-//   .then(() => {
-//     console.log("Database is connected");
-//   })
-//   .catch((err: HttpError) => {
-//     console.log(err);
-//   });
+database
+  .sync({})
+  .then(() => {
+    console.log("Database is connected");
+  })
+  .catch((err: HttpError) => {
+    console.log("No connection:", err);
+  });
+
 
 // Routes
 app.use("/api", apiRouter);

@@ -1,5 +1,6 @@
 import brcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import otpGenerator from 'otp-generator';
 import { APP_SECRET } from '../../configurations/envKeys';
 // import { ResponseDetails } from '../../types/utilities.types';
 // import { errorUtilities } from '../../utilities';
@@ -71,21 +72,21 @@ const generateTokens = async (
 // };
 
 
-// const dateFormatter = (dateString: Date) => {
-//   const year = dateString.getFullYear();
-//   const month = dateString.getMonth() + 1;
-//   const day = dateString.getDate();
-//   const hours = dateString.getHours();
-//   const minutes = dateString.getMinutes();
-//   const seconds = dateString.getSeconds();
-//   const date = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-//   const time = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+const dateFormatter = (dateString: Date) => {
+  const year = dateString.getFullYear();
+  const month = dateString.getMonth() + 1;
+  const day = dateString.getDate();
+  const hours = dateString.getHours();
+  const minutes = dateString.getMinutes();
+  const seconds = dateString.getSeconds();
+  const date = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+  const time = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 
-//   return {
-//     date,
-//     time
-//   };
-// };
+  return {
+    date,
+    time
+  };
+};
 
 
 // const refreshUserToken = async (
@@ -134,19 +135,16 @@ const generateTokens = async (
 //   };
 
   const generateOtp = async () => {
-    const otp = Math.floor(100000 + Math.random() * 90000).toString();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    const otp = otpGenerator.generate(5, { upperCaseAlphabets: false, specialChars: false, digits: true, lowerCaseAlphabets: false })
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
     const otpReturn = ({ otp, expiresAt });
     return otpReturn;
   };
   
-  // const verifyOtp = async (userId:string, otp:string) => {
-  //   const record = await Otp.findOne({ userId, otp, used: false });
-  //   if (!record || record.expiresAt < new Date()) return false;
-  //   record.used = true;
-  //   await record.save();
-  //   return true;
-  // };
+  const verifyOtp = async (otp:Record<string, any>) => {
+    if (new Date(otp.expiresAt) < new Date()) return false;
+    return true;
+  };
 
 
   //This function is used to manage queries (request.query) for the application  
@@ -211,7 +209,8 @@ export default {
   validatePassword,
   generateOtp,
   generateTokens,
+  verifyOtp,
   // refreshUserToken,
-  // dateFormatter,
+  dateFormatter,
   // verifyRegistrationToken
 };

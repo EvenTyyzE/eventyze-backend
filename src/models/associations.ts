@@ -5,48 +5,41 @@ import Followers from "./followers/followersModel";
 import Followings from "./followings/followingsModel";
 
 User.hasMany(Otp, {
-    foreignKey: 'userId',
-    as: 'otp',
+  foreignKey: 'userId',
+  as: 'userOtp',
 });
 
-  Otp.belongsTo(User, {
-    foreignKey: 'userId',
-    as: 'user'
+Otp.belongsTo(User, {
+  foreignKey: 'userId',
+  as: 'otpUser',
 });
-
 
 User.hasOne(Wallet, {
   foreignKey: 'userId',
-  as: 'wallet'
-})
+  as: 'wallet',
+});
 
 Wallet.belongsTo(User, {
   foreignKey: 'userId',
-  as: 'user'
-})
-
+  as: 'walletUser',
+});
 
 User.hasOne(Followers, {
   foreignKey: 'userId',
-  as: 'followers'
-})
+  as: 'userFollowers',
+});
 
 Followers.belongsTo(User, {
   foreignKey: 'userId',
-  as: 'user'
-})
-
+  as: 'followerUser',
+});
 
 User.hasOne(Followings, {
   foreignKey: "userId",
-  as: "followings",
+  as: "userFollowings",
 });
 
 Followings.belongsTo(User, {
   foreignKey: "userId",
-  as: "user",
+  as: "followingUser",
 });
-
-
-
-

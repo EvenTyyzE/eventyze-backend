@@ -2,7 +2,7 @@ import { DataTypes, Model } from "sequelize";
 import { database } from "../../configurations/database";
 import {
   WalletAttributes,
-} from "types/modelTypes";
+} from "../../types/modelTypes";
 import User from "../users/usersModel";
 
 export class Wallet extends Model<WalletAttributes> {}
@@ -16,7 +16,7 @@ Wallet.init(
     },
 
     userId: {
-      type: DataTypes.STRING,
+      type: DataTypes.UUID,
       allowNull: false,
       references: {
         model: User,

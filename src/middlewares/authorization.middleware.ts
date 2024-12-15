@@ -56,7 +56,7 @@ export const generalAuthFunction = async (
 
         const filter = { id: refreshVerifiedUser.id };
 
-        const projection = { refreshToken: 1, isVerified: 1 };
+        const projection = [ 'refreshToken', 'isVerified' ];
 
         const userDetails:any = await userDatabase.userDatabaseHelper.getOne(filter, projection)
 
@@ -101,7 +101,7 @@ export const generalAuthFunction = async (
 
     const filter = { id: verifiedUser.id };
 
-    const projection = { isVerified: 1 };
+    const projection = [ 'isVerified' ];
 
     const userDetails:any = await userDatabase.userDatabaseHelper.getOne(filter, projection)
 

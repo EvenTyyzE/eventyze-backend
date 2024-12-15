@@ -1,13 +1,33 @@
 import { Request, Response } from "express";
-import { userAuthService } from "../../services";
+import { userEmailAuthService } from "../../services";
 import { responseUtilities } from "../../utilities";
+import { JwtPayload } from "jsonwebtoken";
 
 const userRegisterWithEmail = async (
   request: Request,
   response: Response
 ): Promise<any> => {
-  const newUser: any = await userAuthService.userRegistrationService(
+  const newUser: any = await userEmailAuthService.userRegisterWithEmailService(
     request.body
+  );
+
+  return responseUtilities.responseHandler(
+    response,
+    newUser.message,
+    newUser.statusCode,
+    newUser.details,
+    newUser.data
+  );
+};
+
+
+const userVerifiesOtp = async (
+  request: JwtPayload,
+  response: Response
+): Promise<any> => {
+
+  const newUser: any = await userEmailAuthService.userVerifiesOtp(
+   request.body
   );
 
   return responseUtilities.responseHandler(
@@ -23,7 +43,7 @@ const userLoginWithEmail = async (
   request: Request,
   response: Response
 ): Promise<any> => {
-  const loggedInUser: any = await userAuthService.userLogin(request.body);
+  const loggedInUser: any = await userEmailAuthService.userLogin(request.body);
 
   if(loggedInUser.statusCode === 200){
   response
@@ -40,7 +60,27 @@ const userLoginWithEmail = async (
   );
 };
 
+const userResendsOtp = async (
+  request: Request,
+  response: Response
+): Promise<any> => {
+
+  const { email, userId } = request.query
+
+  const resentOtp: any = await userEmailAuthService.userResendsOtpService({ email, userId });
+  
+  return responseUtilities.responseHandler(
+    response,
+    resentOtp.message,
+    resentOtp.statusCode,
+    resentOtp.details,
+    resentOtp.data,
+  );
+};
+
 export default {
   userRegisterWithEmail,
+  userVerifiesOtp,
   userLoginWithEmail,
+  userResendsOtp
 };
