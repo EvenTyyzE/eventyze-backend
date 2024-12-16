@@ -2,7 +2,6 @@ import { ResponseDetails } from "../../types/generalTypes";
 import validator from "validator";
 import { userDatabase, generalHelpers } from "../../helpers";
 import { mailUtilities, errorUtilities } from "../../utilities";
-import { USERS_APP_BASE_URL } from "../../configurations/envKeys";
 import { Roles } from "../../types/modelTypes";
 import { v4 } from "uuid";
 import otpDatabaseHelpers from "../../helpers/databaseHelpers/otpDatabase.helpers";
@@ -149,7 +148,7 @@ const userVerifiesOtp = errorUtilities.withErrorHandling(
 
     const { otp, userId } = userPayload;
 
-    const projection = ['otp'];
+    const projection = ['otp','id', 'role', 'email'];
 
     const user: any = await userDatabase.userDatabaseHelper.getOne(
       { id: userId },
@@ -178,6 +177,18 @@ const userVerifiesOtp = errorUtilities.withErrorHandling(
       );
     }
 
+    const tokenPayload = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    };
+
+    const accessToken = await generalHelpers.generateTokens(tokenPayload, "2h");
+    const refreshToken = await generalHelpers.generateTokens(
+      tokenPayload,
+      "30d"
+    );
+    
     const operations = [
       async (transaction: Transaction) => {
         await otpDatabaseHelpers.otpDatabaseHelper.updateOne(
@@ -210,7 +221,8 @@ const userVerifiesOtp = errorUtilities.withErrorHandling(
 
     responseHandler.statusCode = 200;
     responseHandler.message = "Account verified successfully";
-    responseHandler.data = mainUser;
+    responseHandler.data = {user: mainUser, accessToken,
+      refreshToken };
     return responseHandler;
   }
 );
@@ -284,7 +296,7 @@ const userLogin = errorUtilities.withErrorHandling(
     }
 
     const tokenPayload = {
-      id: existingUser._id,
+      id: existingUser.id,
       email: existingUser.email,
       role: existingUser.role,
     };
@@ -360,9 +372,15 @@ const userResendsOtpService = errorUtilities.withErrorHandling(
       info: {},
     };
 
-    const { email, userId } = resendPayload;
+    const { email } = resendPayload;
 
-    const user:any = await userDatabase.userDatabaseHelper.getOne({email}, ['email', 'otp', 'isVerified'])
+    const user:any = await userDatabase.userDatabaseHelper.getOne({email}, ['email', 'id', 'otp', 'isVerified'])
+
+    if(!user){
+      responseHandler.statusCode = 404;
+      responseHandler.message = "User not found, please register";
+      return responseHandler;
+    }
 
     if(user.isVerified){
       responseHandler.statusCode = 400;
@@ -393,7 +411,7 @@ const userResendsOtpService = errorUtilities.withErrorHandling(
 
     const otpPayload = {
       id: otpId,
-      userId,
+      userId: user.id,
       otp,
       expiresAt,
       used: false,
@@ -417,7 +435,7 @@ const userResendsOtpService = errorUtilities.withErrorHandling(
 
       async (transaction: Transaction) => {
         await userDatabase.userDatabaseHelper.updateOne(
-          { id: userId },
+          { id: user.id },
           userUpdatePayload,
           transaction
         );

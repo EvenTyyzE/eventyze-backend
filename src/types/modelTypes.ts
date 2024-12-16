@@ -80,3 +80,19 @@ export interface FollowingAttributes {
     userId: string;
     followings: string[];
 }
+
+
+//================= EVENTS ======================//
+
+export interface EventAttributes {
+    id: string;
+    userId: string;
+    attendees: string[];
+    description: string;
+    date: Date;
+    startTime: Date;
+    Duration: string;
+    cost: string;
+    eventAd: string;
+    coverImage: string;
+}

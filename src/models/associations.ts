@@ -3,6 +3,7 @@ import User from "./users/usersModel";
 import Otp from "./otp/otpModel";
 import Followers from "./followers/followersModel";
 import Followings from "./followings/followingsModel";
+import Events from "./events/eventsModel";
 
 User.hasMany(Otp, {
   foreignKey: 'userId',
@@ -43,3 +44,13 @@ Followings.belongsTo(User, {
   foreignKey: "userId",
   as: "followingUser",
 });
+
+Events.belongsTo(User, {
+  foreignKey: "userId",
+  as: "events",
+});
+
+User.hasMany(Events, {
+  foreignKey: "userId",
+  as: "userEvents",
+})
