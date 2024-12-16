@@ -93,4 +93,6 @@ export interface EventAttributes {
     startTime: Date;
     Duration: string;
     cost: string;
+    eventAd: string;
+    coverImage: string;
 }

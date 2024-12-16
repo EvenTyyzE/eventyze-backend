@@ -26,23 +26,28 @@ Events.init(
 
       attendees: {
           type: DataTypes.ARRAY(DataTypes.UUID),
-          allowNull: false,
+          allowNull: true,
           defaultValue: [],
       },
 
       description: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+
+      eventAd: {
         type: DataTypes.STRING,
         allowNull: true,
       },
 
       date: {
         type: DataTypes.DATE,
-        allowNull: true,
+        allowNull: false,
       },
 
       startTime: {
         type: DataTypes.DATE,
-        allowNull: true,
+        allowNull: false,
       },
 
       Duration: {
@@ -52,9 +57,14 @@ Events.init(
 
       cost: {
         type: DataTypes.STRING,
-        allowNull: true,
+        allowNull: false,
       },
-      
+
+      coverImage: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      }
+
   },
   {
     sequelize: database,
