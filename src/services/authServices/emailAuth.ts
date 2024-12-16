@@ -149,7 +149,7 @@ const userVerifiesOtp = errorUtilities.withErrorHandling(
 
     const { otp, userId } = userPayload;
 
-    const projection = ['otp'];
+    const projection = ['otp','id', 'role', 'email'];
 
     const user: any = await userDatabase.userDatabaseHelper.getOne(
       { id: userId },
@@ -178,6 +178,18 @@ const userVerifiesOtp = errorUtilities.withErrorHandling(
       );
     }
 
+    const tokenPayload = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    };
+
+    const accessToken = await generalHelpers.generateTokens(tokenPayload, "2h");
+    const refreshToken = await generalHelpers.generateTokens(
+      tokenPayload,
+      "30d"
+    );
+    
     const operations = [
       async (transaction: Transaction) => {
         await otpDatabaseHelpers.otpDatabaseHelper.updateOne(
@@ -210,7 +222,8 @@ const userVerifiesOtp = errorUtilities.withErrorHandling(
 
     responseHandler.statusCode = 200;
     responseHandler.message = "Account verified successfully";
-    responseHandler.data = mainUser;
+    responseHandler.data = {user: mainUser, accessToken,
+      refreshToken };
     return responseHandler;
   }
 );
@@ -284,7 +297,7 @@ const userLogin = errorUtilities.withErrorHandling(
     }
 
     const tokenPayload = {
-      id: existingUser._id,
+      id: existingUser.id,
       email: existingUser.email,
       role: existingUser.role,
     };
