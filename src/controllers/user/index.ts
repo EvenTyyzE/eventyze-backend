@@ -23,7 +23,24 @@ const updateUserProfile = async (
   );
 };
 
+const changeUserImage = async (
+  request: JwtPayload,
+  response: Response
+): Promise<any> => {
+
+  const newUserImage: any = await userServices.updateUserImageService(request)
+
+  return responseUtilities.responseHandler(
+    response,
+    newUserImage.message,
+    newUserImage.statusCode,
+    newUserImage.data,
+    newUserImage.details
+  );
+};
+
 
 export default {
     updateUserProfile,
+    changeUserImage
 }

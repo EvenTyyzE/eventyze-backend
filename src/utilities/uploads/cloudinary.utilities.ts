@@ -4,6 +4,7 @@ import { v2 as cloudinary } from 'cloudinary';
 import dotenv from 'dotenv';
 import {Request, Response} from 'express';
 import { CLOUDINARY_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET } from '../../configurations/envKeys';
+import { errorUtilities } from '../';
 
 dotenv.config()
 

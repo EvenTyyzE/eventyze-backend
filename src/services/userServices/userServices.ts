@@ -117,8 +117,6 @@ const updateUserImageService = errorUtilities.withErrorHandling(
 
     const { id } = request.user;
 
-    const user = await userDatabase.userDatabaseHelper.getOne({id})
-
     const newMovie: any = await userDatabase.userDatabaseHelper.updateOne(
       {
         id,
