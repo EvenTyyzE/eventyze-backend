@@ -9,6 +9,7 @@ import followersDatabaseHelpersHelpers from "../../helpers/databaseHelpers/follo
 import followingsDatabaseHelpersHelpers from "../../helpers/databaseHelpers/followingsDatabaseHelpers.helpers";
 import { Transaction } from "sequelize";
 import performTransaction from "../../middlewares/databaseTransactions.middleware";
+import { JwtPayload } from "jsonwebtoken";
 
 const userProfileUpdateService = errorUtilities.withErrorHandling(
   async (profilePayload: Record<string, any>): Promise<Record<string, any>> => {
@@ -101,7 +102,40 @@ const userProfileUpdateService = errorUtilities.withErrorHandling(
   }
 );
 
+const updateUserImageService = errorUtilities.withErrorHandling(
+  async (request: JwtPayload): Promise<any> => {
+    const responseHandler: ResponseDetails = {
+      statusCode: 0,
+      message: "",
+    };
 
+      const imageUpdate = request?.file?.path;
+
+      if (!imageUpdate) {
+        throw errorUtilities.createError("Select an Image", 400);
+      }
+
+    const { id } = request.user;
+
+    const user = await userDatabase.userDatabaseHelper.getOne({id})
+
+    const newMovie: any = await userDatabase.userDatabaseHelper.updateOne(
+      {
+        id,
+      },
+      {
+        userImage: imageUpdate
+      }
+    );
+
+    responseHandler.statusCode = 200;
+    responseHandler.message = "Movie image changed successfully";
+    responseHandler.data = {
+      mmovie: newMovie,
+    };
+    return responseHandler;
+  }
+);
 
 const userSwitchesToHostService = errorUtilities.withErrorHandling(
   async (userPayload: Record<string, any>): Promise<Record<string, any>> => {
@@ -119,5 +153,6 @@ const userSwitchesToHostService = errorUtilities.withErrorHandling(
 
 export default {
   userProfileUpdateService,
+  updateUserImageService,
   userSwitchesToHostService,
 };

@@ -3,6 +3,7 @@ import User from "../../models/users/usersModel";
 import Wallet from "../../models/wallets/walletModel";
 import Followings from "../../models/followings/followingsModel";
 import Followers from "../../models/followers/followersModel";
+import { errorUtilities } from "../../utilities";
 
 const userDatabaseHelper = {
 
@@ -66,6 +67,9 @@ const userDatabaseHelper = {
           { model: Followings, as: 'userFollowings' }
         ] : []
       });
+      if(!user){
+        throw errorUtilities.createError("User not found", 404);
+      }
       return user;
     } catch (error: any) {
       throw new Error(`Error fetching User: ${error.message}`);
