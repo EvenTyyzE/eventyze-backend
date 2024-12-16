@@ -30,6 +30,9 @@ const getAllHostsService = errorUtilities.withErrorHandling(
     if(!hosts || hosts.length === 0){
         responseHandler.statusCode = 404;
         responseHandler.message = "No hosts found";
+        responseHandler.data = {
+            hosts
+        }
         return responseHandler;
     }
 

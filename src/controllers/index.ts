@@ -1,8 +1,10 @@
-import userAuthController from './userAuth/userAuth.controller';
+import userAuthController from './userAuth';
 import userController from './user';
+import hostController from './host'
 
 
 export {
     userAuthController,
-    userController
+    userController,
+    hostController
 }
