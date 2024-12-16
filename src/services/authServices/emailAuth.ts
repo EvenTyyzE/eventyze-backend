@@ -360,9 +360,15 @@ const userResendsOtpService = errorUtilities.withErrorHandling(
       info: {},
     };
 
-    const { email, userId } = resendPayload;
+    const { email } = resendPayload;
 
-    const user:any = await userDatabase.userDatabaseHelper.getOne({email}, ['email', 'otp', 'isVerified'])
+    const user:any = await userDatabase.userDatabaseHelper.getOne({email}, ['email', 'id', 'otp', 'isVerified'])
+
+    if(!user){
+      responseHandler.statusCode = 404;
+      responseHandler.message = "User not found, please register";
+      return responseHandler;
+    }
 
     if(user.isVerified){
       responseHandler.statusCode = 400;
@@ -393,7 +399,7 @@ const userResendsOtpService = errorUtilities.withErrorHandling(
 
     const otpPayload = {
       id: otpId,
-      userId,
+      userId: user.id,
       otp,
       expiresAt,
       used: false,
@@ -417,7 +423,7 @@ const userResendsOtpService = errorUtilities.withErrorHandling(
 
       async (transaction: Transaction) => {
         await userDatabase.userDatabaseHelper.updateOne(
-          { id: userId },
+          { id: user.id },
           userUpdatePayload,
           transaction
         );
