@@ -2,7 +2,6 @@ import { ResponseDetails } from "../../types/generalTypes";
 import validator from "validator";
 import { userDatabase, generalHelpers } from "../../helpers";
 import { mailUtilities, errorUtilities } from "../../utilities";
-import { USERS_APP_BASE_URL } from "../../configurations/envKeys";
 import { Roles } from "../../types/modelTypes";
 import { v4 } from "uuid";
 import otpDatabaseHelpers from "../../helpers/databaseHelpers/otpDatabase.helpers";

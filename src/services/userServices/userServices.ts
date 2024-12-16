@@ -1,14 +1,7 @@
 import { ResponseDetails } from "../../types/generalTypes";
-import { userDatabase, generalHelpers } from "../../helpers";
-import { mailUtilities, errorUtilities } from "../../utilities";
+import { userDatabase } from "../../helpers";
+import { errorUtilities } from "../../utilities";
 import validator from "validator";
-import { Roles } from "../../types/modelTypes";
-import { v4 } from "uuid";
-import walletDatabaseHelperHelpers from "../../helpers/databaseHelpers/walletDatabaseHelper.helpers";
-import followersDatabaseHelpersHelpers from "../../helpers/databaseHelpers/followersDatabaseHelpers.helpers";
-import followingsDatabaseHelpersHelpers from "../../helpers/databaseHelpers/followingsDatabaseHelpers.helpers";
-import { Transaction } from "sequelize";
-import performTransaction from "../../middlewares/databaseTransactions.middleware";
 import { JwtPayload } from "jsonwebtoken";
 
 const userProfileUpdateService = errorUtilities.withErrorHandling(
@@ -148,6 +141,7 @@ const userSwitchesToHostService = errorUtilities.withErrorHandling(
     return responseHandler;
   }
 );
+
 
 export default {
   userProfileUpdateService,
